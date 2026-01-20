@@ -192,3 +192,234 @@ def get_tournament_matches(tournament_id: int, phase: Optional[str] = None) -> l
         query = query.filter_by(phase=phase)
 
     return query.order_by(Match.id).all()
+
+
+def register_user_for_tournament(user_id: int, tournament_id: int) -> Registration:
+    """
+    Register user for tournament.
+
+    Args:
+        user_id: User ID
+        tournament_id: Tournament ID
+
+    Returns:
+        Created Registration object
+
+    Raises:
+        TournamentError: If validation fails
+    """
+    # Query tournament
+    tournament = Tournament.query.get(tournament_id)
+    if not tournament:
+        raise TournamentError("Tournament not found")
+
+    # Validate status
+    if tournament.status != TournamentStatus.REGISTRATION:
+        raise TournamentError("Tournament is not accepting registrations")
+
+    # Check for existing registration
+    existing = Registration.query.filter_by(
+        user_id=user_id,
+        tournament_id=tournament_id
+    ).first()
+
+    if existing:
+        raise TournamentError("You are already registered for this tournament")
+
+    # Create registration with all stats initialized to 0
+    registration = Registration(
+        user_id=user_id,
+        tournament_id=tournament_id,
+        group_points=0,
+        sets_won=0,
+        sets_lost=0,
+        points_won=0,
+        points_lost=0
+    )
+
+    db.session.add(registration)
+    db.session.commit()
+
+    return registration
+
+
+def unregister_user_from_tournament(user_id: int, tournament_id: int) -> None:
+    """
+    Unregister user from tournament.
+
+    Args:
+        user_id: User ID
+        tournament_id: Tournament ID
+
+    Raises:
+        TournamentError: If validation fails
+    """
+    # Query tournament
+    tournament = Tournament.query.get(tournament_id)
+    if not tournament:
+        raise TournamentError("Tournament not found")
+
+    # Validate status - can only unregister during registration phase
+    if tournament.status != TournamentStatus.REGISTRATION:
+        raise TournamentError("Cannot unregister after group stage has started")
+
+    # Query registration
+    registration = Registration.query.filter_by(
+        user_id=user_id,
+        tournament_id=tournament_id
+    ).first()
+
+    if not registration:
+        raise TournamentError("You are not registered for this tournament")
+
+    db.session.delete(registration)
+    db.session.commit()
+
+
+def get_user_tournaments(user_id: int) -> dict:
+    """
+    Get categorized tournaments for user.
+
+    Args:
+        user_id: User ID
+
+    Returns:
+        Dictionary with categorized tournament lists:
+        {
+            'available': [Tournament],    # REGISTRATION, user not in
+            'registered': [Tournament],   # User in, REGISTRATION status
+            'in_progress': [Tournament],  # User in, GROUP_STAGE or PLAYOFFS
+            'completed': [Tournament]     # User in, COMPLETED
+        }
+    """
+    # Get user's registrations with tournaments
+    user_registrations = Registration.query.filter_by(user_id=user_id).options(
+        db.joinedload(Registration.tournament)
+    ).all()
+
+    # Extract registered tournament IDs and categorize
+    registered_tournament_ids = [reg.tournament_id for reg in user_registrations]
+    registered = []
+    in_progress = []
+    completed = []
+
+    for reg in user_registrations:
+        tournament = reg.tournament
+        if tournament.status == TournamentStatus.REGISTRATION:
+            registered.append(tournament)
+        elif tournament.status in [TournamentStatus.GROUP_STAGE, TournamentStatus.PLAYOFFS]:
+            in_progress.append(tournament)
+        elif tournament.status == TournamentStatus.COMPLETED:
+            completed.append(tournament)
+
+    # Get available tournaments (REGISTRATION status, user not registered)
+    available = Tournament.query.filter(
+        Tournament.status == TournamentStatus.REGISTRATION,
+        ~Tournament.id.in_(registered_tournament_ids) if registered_tournament_ids else True
+    ).all()
+
+    return {
+        'available': available,
+        'registered': registered,
+        'in_progress': in_progress,
+        'completed': completed
+    }
+
+
+def get_user_registration(user_id: int, tournament_id: int) -> Optional[Registration]:
+    """
+    Get user's registration for tournament, if exists.
+
+    Args:
+        user_id: User ID
+        tournament_id: Tournament ID
+
+    Returns:
+        Registration object or None
+    """
+    return Registration.query.filter_by(
+        user_id=user_id,
+        tournament_id=tournament_id
+    ).first()
+
+
+def calculate_standings(tournament_id: int) -> list[dict]:
+    """
+    Calculate standings with tiebreakers.
+
+    Tiebreaker order:
+    1. Group points (DESC)
+    2. Head-to-head record (simplified: 2 players only, 3+ skip to next)
+    3. Set difference (DESC)
+    4. Point difference (DESC)
+    5. Points scored (DESC)
+
+    Args:
+        tournament_id: Tournament ID
+
+    Returns:
+        List of standing dictionaries with position, stats, and relationships
+    """
+    # 1. Get registrations with eager loading
+    registrations = Registration.query.filter_by(tournament_id=tournament_id).options(
+        db.joinedload(Registration.user)
+    ).all()
+
+    # 2. Get confirmed GROUP matches
+    confirmed_matches = Match.query.filter(
+        Match.tournament_id == tournament_id,
+        Match.phase == MatchPhase.GROUP.value,
+        Match.status == MatchStatus.CONFIRMED.value,
+        Match.winner_id.isnot(None)
+    ).all()
+
+    # 3. Calculate W/L for each user
+    stats = {}  # {user_id: {'won': 0, 'lost': 0}}
+    for reg in registrations:
+        stats[reg.user_id] = {'won': 0, 'lost': 0}
+
+    for match in confirmed_matches:
+        winner_id = match.winner_id
+        loser_id = match.player2_id if winner_id == match.player1_id else match.player1_id
+
+        if winner_id in stats:
+            stats[winner_id]['won'] += 1
+        if loser_id in stats:
+            stats[loser_id]['lost'] += 1
+
+    # 4. Build standings list
+    standings = []
+    for reg in registrations:
+        user_stats = stats.get(reg.user_id, {'won': 0, 'lost': 0})
+        won = user_stats['won']
+        lost = user_stats['lost']
+
+        standings.append({
+            'registration': reg,
+            'user': reg.user,
+            'played': won + lost,
+            'won': won,
+            'lost': lost,
+            'group_points': reg.group_points,
+            'set_diff': reg.set_difference,
+            'point_diff': reg.point_difference,
+            'sets_record': f"{reg.sets_won}-{reg.sets_lost}",
+            'points_record': f"{reg.points_won}-{reg.points_lost}"
+        })
+
+    # 5. Sort with tiebreakers
+    # NOTE: Head-to-head (tiebreaker 2) simplified for Phase 3:
+    # - Only handles 2-player ties (complex multi-way tiebreakers deferred)
+    # - 3+ tied players fall through to set difference
+    standings.sort(key=lambda x: (
+        -x['group_points'],           # Primary: points DESC
+        -x['set_diff'],               # Tiebreaker 3: set diff DESC
+        -x['point_diff'],             # Tiebreaker 4: point diff DESC
+        -x['registration'].points_won # Tiebreaker 5: points scored DESC
+    ))
+
+    # 6. Assign positions
+    for i, standing in enumerate(standings):
+        standing['position'] = i + 1
+
+    return standings

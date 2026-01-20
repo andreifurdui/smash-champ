@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tournament.name }} - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('tournament.list') }}" class="text-mk-text-secondary hover:text-mk-fire transition-colors">
+            ← Back to Tournaments
+        </a>
+    </div>
+
+    <!-- Tournament Header Card -->
+    <div class="card mb-6">
+        <div class="flex justify-between items-start mb-4">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-mk-fire mb-2">{{ tournament.name }}</h1>
+                {% if tournament.description %}
+                <p class="text-mk-text-secondary">{{ tournament.description }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Status Badge -->
+            <div>
+                {% if tournament.status == 'registration' %}
+                <span class="inline-block bg-yellow-500 bg-opacity-20 border border-yellow-500 text-yellow-500 text-sm font-bold px-3 py-1 rounded">
+                    REGISTRATION
+                </span>
+                {% elif tournament.status == 'group_stage' %}
+                <span class="inline-block bg-orange-500 bg-opacity-20 border border-orange-500 text-orange-500 text-sm font-bold px-3 py-1 rounded">
+                    GROUP STAGE
+                </span>
+                {% elif tournament.status == 'playoffs' %}
+                <span class="inline-block bg-mk-fire bg-opacity-20 border border-mk-fire text-mk-fire text-sm font-bold px-3 py-1 rounded">
+                    PLAYOFFS
+                </span>
+                {% elif tournament.status == 'completed' %}
+                <span class="inline-block bg-green-500 bg-opacity-20 border border-green-500 text-green-500 text-sm font-bold px-3 py-1 rounded">
+                    COMPLETED
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tournament Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+                <div class="text-mk-text-secondary text-sm">Players</div>
+                <div class="text-2xl font-bold text-mk-fire">{{ players|length }}</div>
+            </div>
+            <div>
+                <div class="text-mk-text-secondary text-sm">Format</div>
+                <div class="text-lg font-semibold">{{ tournament.playoff_format|upper }}</div>
+            </div>
+            <div>
+                <div class="text-mk-text-secondary text-sm">Matches</div>
+                <div class="text-lg font-semibold">{{ matches|length }}</div>
+            </div>
+            <div>
+                <div class="text-mk-text-secondary text-sm">Created</div>
+                <div class="text-lg font-semibold">{{ tournament.created_at.strftime('%b %d') }}</div>
+            </div>
+        </div>
+
+        <!-- Registration Actions -->
+        {% if tournament.status == 'registration' %}
+        <div class="pt-4 border-t border-mk-darkest">
+            {% if user_registration %}
+            <form method="POST" action="{{ url_for('tournament.unregister', tournament_id=tournament.id) }}"
+                  onsubmit="return confirm('Are you sure you want to unregister from this tournament?')">
+                <button type="submit" class="btn-secondary w-full md:w-auto">
+                    Unregister from Tournament
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('tournament.register', tournament_id=tournament.id) }}">
+                <button type="submit" class="btn-primary w-full md:w-auto">
+                    Register for Tournament
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabs -->
+    <div x-data="{ activeTab: 'overview' }">
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-mk-darkest mb-6">
+            <button @click="activeTab = 'overview'"
+                    :class="activeTab === 'overview' ? 'border-mk-fire text-mk-fire' : 'border-transparent text-mk-text-secondary'"
+                    class="px-6 py-3 font-semibold border-b-2 hover:text-mk-fire transition-colors">
+                Overview
+            </button>
+            {% if standings %}
+            <button @click="activeTab = 'standings'"
+                    :class="activeTab === 'standings' ? 'border-mk-fire text-mk-fire' : 'border-transparent text-mk-text-secondary'"
+                    class="px-6 py-3 font-semibold border-b-2 hover:text-mk-fire transition-colors">
+                Standings
+            </button>
+            {% endif %}
+            <button @click="activeTab = 'fixtures'"
+                    :class="activeTab === 'fixtures' ? 'border-mk-fire text-mk-fire' : 'border-transparent text-mk-text-secondary'"
+                    class="px-6 py-3 font-semibold border-b-2 hover:text-mk-fire transition-colors">
+                Fixtures
+            </button>
+        </div>
+
+        <!-- Tab 1: Overview (Player List) -->
+        <div x-show="activeTab === 'overview'">
+            <div class="card">
+                <h2 class="text-2xl font-bold mb-6">Registered Players ({{ players|length }})</h2>
+
+                {% if players %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for player in players %}
+                    <div class="bg-mk-darker border {% if player.id == current_user.id %}border-mk-fire bg-mk-fire bg-opacity-5{% else %}border-mk-darkest{% endif %} rounded-lg p-4 hover:border-mk-fire transition-colors">
+                        <div class="flex items-center gap-3 mb-2">
+                            <img src="{{ player.avatar }}" alt="{{ player.username }}" class="w-12 h-12 rounded-full">
+                            <div class="flex-1">
+                                <div class="font-bold text-lg">
+                                    {{ player.username }}
+                                    {% if player.id == current_user.id %}
+                                    <span class="text-mk-fire text-sm">(You)</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-xs italic text-mk-text-secondary">
+                            "{{ player.tagline }}"
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-mk-text-secondary">
+                    No players registered yet
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tab 2: Standings Table -->
+        {% if standings %}
+        <div x-show="activeTab === 'standings'">
+            <div class="card">
+                <h2 class="text-2xl font-bold mb-6">Group Stage Standings</h2>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-mk-darkest">
+                            <tr class="text-left text-sm">
+                                <th class="px-4 py-3">Pos</th>
+                                <th class="px-4 py-3">Player</th>
+                                <th class="px-4 py-3 text-center">P</th>
+                                <th class="px-4 py-3 text-center">W</th>
+                                <th class="px-4 py-3 text-center">L</th>
+                                <th class="px-4 py-3 text-center">Set Diff</th>
+                                <th class="px-4 py-3 text-center">Pt Diff</th>
+                                <th class="px-4 py-3 text-center font-bold">Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for standing in standings %}
+                            <tr class="border-t {% if standing.user.id == current_user.id %}bg-mk-fire bg-opacity-10 border-mk-fire{% else %}border-mk-darkest hover:bg-mk-darker{% endif %} transition-colors">
+                                <td class="px-4 py-3">
+                                    {% if standing.position == 1 %}
+                                    <span class="text-2xl">🔥</span>
+                                    {% else %}
+                                    {{ standing.position }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <img src="{{ standing.user.avatar }}" alt="{{ standing.user.username }}" class="w-8 h-8 rounded-full">
+                                        <span class="font-semibold">
+                                            {{ standing.user.username }}
+                                            {% if standing.user.id == current_user.id %}
+                                            <span class="text-mk-fire text-xs">(You)</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-center">{{ standing.played }}</td>
+                                <td class="px-4 py-3 text-center text-green-500">{{ standing.won }}</td>
+                                <td class="px-4 py-3 text-center text-red-500">{{ standing.lost }}</td>
+                                <td class="px-4 py-3 text-center {% if standing.set_diff > 0 %}text-green-500{% elif standing.set_diff < 0 %}text-red-500{% endif %}">
+                                    {{ standing.set_diff }}
+                                </td>
+                                <td class="px-4 py-3 text-center {% if standing.point_diff > 0 %}text-green-500{% elif standing.point_diff < 0 %}text-red-500{% endif %}">
+                                    {{ standing.point_diff }}
+                                </td>
+                                <td class="px-4 py-3 text-center font-bold text-mk-fire text-lg">
+                                    {{ standing.group_points }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tiebreaker Legend -->
+                <div class="mt-6 p-4 bg-mk-darkest rounded-lg">
+                    <p class="text-xs text-mk-text-secondary mb-1">
+                        <strong class="text-mk-fire">Tiebreakers:</strong> 1) Points | 2) H2H | 3) Set Diff | 4) Point Diff | 5) Points Scored
+                    </p>
+                    <p class="text-xs text-mk-text-secondary">
+                        <strong class="text-mk-fire">Scoring:</strong> Win = 2 pts | Loss = 1 pt | Walkover = 0 pts
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tab 3: Fixtures List -->
+        <div x-show="activeTab === 'fixtures'">
+            <div class="card">
+                <h2 class="text-2xl font-bold mb-4">Group Stage Fixtures</h2>
+                <p class="text-sm text-mk-text-secondary mb-6">{{ matches|length }} matches total</p>
+
+                {% if matches %}
+                <div class="space-y-3">
+                    {% for match in matches %}
+                    <div class="bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
+                        <div class="flex items-center justify-between">
+                            <!-- Player 1 -->
+                            <div class="flex items-center gap-3 flex-1">
+                                <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}" class="w-10 h-10 rounded-full">
+                                <span class="font-semibold {% if match.player1.id == current_user.id %}text-mk-fire{% endif %}">
+                                    {{ match.player1.username }}
+                                </span>
+                            </div>
+
+                            <!-- VS Badge -->
+                            <div class="px-4 py-1 bg-mk-fire text-mk-dark font-bold rounded mx-4">VS</div>
+
+                            <!-- Player 2 -->
+                            <div class="flex items-center gap-3 flex-1 justify-end">
+                                <span class="font-semibold {% if match.player2.id == current_user.id %}text-mk-fire{% endif %}">
+                                    {{ match.player2.username }}
+                                </span>
+                                <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}" class="w-10 h-10 rounded-full">
+                            </div>
+
+                            <!-- Fixture Number -->
+                            <div class="text-xs text-mk-text-secondary ml-4 min-w-[40px] text-right">
+                                #{{ match.fixture_number }}
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mt-3 text-center text-xs">
+                            {% if match.status == 'scheduled' %}
+                            <span class="text-mk-text-secondary">⏱ Scheduled</span>
+                            {% elif match.status == 'pending_confirmation' %}
+                            <span class="text-yellow-500">⏳ Awaiting Confirmation</span>
+                            {% elif match.status == 'confirmed' %}
+                            <span class="text-green-500">✓ Confirmed</span>
+                            {% elif match.status == 'disputed' %}
+                            <span class="text-red-500">⚠️ Disputed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-mk-text-secondary">
+                    No fixtures scheduled yet
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

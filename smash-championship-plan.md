@@ -3,7 +3,7 @@
 > **Project**: .smash (styled lowercase with dot, like parent company .lumen)
 > **Version:** 1.0
 > **Last Updated:** January 20, 2026
-> **Implementation Status:** Phase 0 ✅ | Phase 1 ✅ | Phase 2 ✅ | Phase 3 Ready to Start
+> **Implementation Status:** Phase 0 ✅ | Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 Ready to Start
 
 ---
 
@@ -1703,33 +1703,71 @@ Tasks:
 
 ---
 
-### Phase 3: User Tournament Flow (Claude Code Session 4)
-**Duration**: ~45 minutes
+### Phase 3: User Tournament Flow ✅ COMPLETED
+**Duration**: ~45 minutes (actual)
 **Goal**: Users can register for tournaments and view fixtures
+**Status**: ✅ **COMPLETED** - January 20, 2026
 
 ```
 Tasks:
-□ Public tournament list page
-□ Tournament detail page (user view)
-  □ Registration button
-  □ Unregister button
-  □ Player list
-□ Registration logic
-  □ Check tournament status
-  □ Prevent duplicate registration
-□ Group stage standings table
-  □ Calculate points, set diff, etc.
-  □ Apply tiebreakers
-  □ Highlight user's row
-□ Fixtures list view
-  □ Filter by status
-  □ Show scores for completed
+☑ Public tournament list page
+☑ Tournament detail page (user view)
+  ☑ Registration button
+  ☑ Unregister button
+  ☑ Player list
+☑ Registration logic
+  ☑ Check tournament status
+  ☑ Prevent duplicate registration
+☑ Group stage standings table
+  ☑ Calculate points, set diff, etc.
+  ☑ Apply tiebreakers
+  ☑ Highlight user's row
+☑ Fixtures list view
+  ☑ Filter by status
+  ☑ Show scores for completed
 ```
 
 **Deliverables**:
-- Users can register for tournaments
-- Standings table displays correctly
-- Fixtures list shows all matches
+- ✅ Users can register for tournaments
+- ✅ Standings table displays correctly with tiebreakers
+- ✅ Fixtures list shows all matches
+- ✅ Tournament categorization (Available, Your Tournaments, Completed)
+- ✅ Three-tab tournament detail page (Overview, Standings, Fixtures)
+- ✅ Current user highlighting throughout
+- ✅ Real-time standings calculation with W/L records
+- ✅ VS-style fixture displays with status indicators
+- ✅ Mobile responsive design with Alpine.js tabs
+
+**Files Created** (3 files):
+- `app/routes/tournament.py` - User tournament blueprint (4 routes: list, detail, register, unregister)
+- `app/templates/tournament/list.html` - Categorized tournament browser
+- `app/templates/tournament/detail.html` - Multi-tab detail view with Alpine.js
+
+**Files Modified** (3 files):
+- `app/services/tournament.py` - Added 5 service functions (+230 lines):
+  - `register_user_for_tournament()` - Registration with validation
+  - `unregister_user_from_tournament()` - Unregistration with phase checks
+  - `get_user_tournaments()` - Tournament categorization by status
+  - `get_user_registration()` - Check registration status
+  - `calculate_standings()` - Real-time standings with tiebreakers
+- `app/__init__.py` - Registered tournament blueprint
+- `app/templates/base.html` - Updated navigation link, added Alpine.js
+
+**Implementation Notes**:
+- Tournament status stored as strings, not enum values (tournament.status == 'registration' not .value)
+- Standings calculation sorts by: points (DESC), set diff (DESC), point diff (DESC), points scored (DESC)
+- Head-to-head tiebreaker simplified for Phase 3 (documented limitation)
+- Current user highlighted with fire border/background throughout UI
+- Fire icon (🔥) displayed for 1st place in standings
+- Registration only allowed during registration phase
+- Unregistration blocked once group stage starts
+- Flash messages for all actions (success/error/warning)
+- Empty states handled for all sections
+
+**Test Data Created**:
+- "Summer Smash 2026" tournament in registration phase
+- 1 confirmed match in "Winter Championship 2026" for standings testing
+- All service functions verified with automated tests
 
 ---
 
