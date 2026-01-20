@@ -12,7 +12,7 @@ Features: user registration, group stage (round-robin with double fixtures), Gau
 
 **Brand**: .smash (styled lowercase with dot)
 **Theme**: Mortal Kombat inspired - dark UI, fiery accents, dramatic VS displays
-**URL**: `smash.lumen.local`
+**URL**: `smash.muncher.lumen.lan`
 
 ## Tech Stack
 
@@ -104,9 +104,9 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 | 5 | Score submission + confirmation flow | ✅ Complete |
 | 6 | Gauntlet playoff bracket generation | ✅ Complete |
 | 7 | Statistics pages | ✅ Complete |
-| 8 | Polish + deployment | 🔜 Next |
+| 8 | Polish + deployment | ✅ Complete |
 
-**Current Status**: Phase 7 complete. Comprehensive statistics system implemented with global leaderboard, user stats pages, head-to-head comparisons, match history browser, and hall of fame. All service functions tested and working. Navigation integrated in navbar, dashboard, and profile pages. Ready for Phase 8 (Polish + Deployment).
+**Current Status**: Phase 8 complete. Production-ready with error pages (404/500), global error handlers, rotating file logging, and deployment configuration (Gunicorn, Nginx, systemd). All phases complete - app ready for deployment to smash.lumen.local.
 
 ## Coding Guidelines
 

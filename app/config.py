@@ -30,15 +30,16 @@ class DevelopmentConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     """Production configuration."""
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SECRET_KEY = os.environ.get('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        'DATABASE_URL',
+        f'sqlite:///{basedir / "instance" / "smash.db"}'
+    )
 
     @classmethod
     def init_app(cls, app):
-        assert cls.SECRET_KEY != 'dev-secret-key-change-in-production', \
-            'SECRET_KEY must be set in production'
-        assert cls.SQLALCHEMY_DATABASE_URI, \
-            'DATABASE_URL must be set in production'
+        if not cls.SECRET_KEY:
+            raise ValueError("SECRET_KEY environment variable must be set in production")
 
 
 class TestingConfig(BaseConfig):

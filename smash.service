@@ -1,0 +1,14 @@
+[Unit]
+Description=.smash Table Tennis Championship
+After=network.target
+
+[Service]
+User=a-f
+Group=a-f
+WorkingDirectory=/home/a-f/smash-champ
+Environment="PATH=/home/a-f/smash-champ/venv/bin"
+ExecStart=/home/a-f/smash-champ/venv/bin/gunicorn -c gunicorn.conf.py wsgi:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
