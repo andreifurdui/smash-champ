@@ -98,15 +98,15 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 |-------|-------|--------|
 | 0 | Project setup, models, migrations | ✅ Complete |
 | 1 | Auth (register, login, profile) | ✅ Complete |
-| 2 | Admin tournament management | 🔜 Next |
-| 3 | User tournament registration, standings | Planned |
+| 2 | Admin tournament management | ✅ Complete |
+| 3 | User tournament registration, standings | 🔜 Next |
 | 4 | Dashboard with VS cards | Planned |
 | 5 | Score submission + confirmation flow | Planned |
 | 6 | Gauntlet playoff bracket generation | Planned |
 | 7 | Statistics pages | Planned |
 | 8 | Polish + deployment | Planned |
 
-**Current Status**: Phase 1 complete. All authentication routes, forms, templates, and styling implemented. Ready for Phase 2.
+**Current Status**: Phase 2 complete. Admin tournament management with double round-robin fixture generation fully implemented. Ready for Phase 3.
 
 ## Coding Guidelines
 

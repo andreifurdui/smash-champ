@@ -55,7 +55,7 @@
                             Stats
                         </a>
                         {% if current_user.is_admin %}
-                        <a href="#" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
+                        <a href="{{ url_for('admin.dashboard') }}" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
                             Admin
                         </a>
                         {% endif %}

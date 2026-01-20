@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Create Tournament - Admin - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="text-mk-text-secondary hover:text-mk-fire transition-colors">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <h2 class="text-3xl font-bold text-center mb-2 text-mk-fire">Create New Tournament</h2>
+        <p class="text-center text-mk-text-secondary mb-6">Set up a new championship event</p>
+
+        <form method="POST" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            <!-- Tournament Name -->
+            <div>
+                <label for="name" class="block text-sm font-medium mb-1">{{ form.name.label }}</label>
+                {{ form.name(class="input-field", placeholder="e.g., Winter Championship 2026") }}
+                {% if form.name.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.name.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium mb-1">
+                    {{ form.description.label }}
+                </label>
+                {{ form.description(class="input-field", rows="4", placeholder="Describe the tournament... (optional)", maxlength="500", id="description-input") }}
+                <div class="text-right text-sm text-mk-text-secondary mt-1">
+                    <span id="description-count">0</span>/500
+                </div>
+                {% if form.description.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.description.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Playoff Format -->
+            <div>
+                <label for="playoff_format" class="block text-sm font-medium mb-1">{{ form.playoff_format.label }}</label>
+                {{ form.playoff_format(class="input-field") }}
+                <p class="text-xs text-mk-text-secondary mt-1">
+                    Gauntlet: Last place challenges up, all players qualify from group stage
+                </p>
+                {% if form.playoff_format.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.playoff_format.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4 pt-2">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary flex-1">
+                    Create Tournament
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter for description
+    const descriptionInput = document.getElementById('description-input');
+    const descriptionCount = document.getElementById('description-count');
+
+    if (descriptionInput && descriptionCount) {
+        descriptionInput.addEventListener('input', function() {
+            descriptionCount.textContent = this.value.length;
+        });
+
+        // Initialize count on page load
+        descriptionCount.textContent = descriptionInput.value.length;
+    }
+</script>
+{% endblock %}

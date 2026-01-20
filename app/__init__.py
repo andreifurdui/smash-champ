@@ -22,8 +22,9 @@ def create_app(config_name='default'):
         return User.query.get(int(user_id))
 
     # Register blueprints
-    from app.routes import auth, main
+    from app.routes import auth, main, admin
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
+    app.register_blueprint(admin.bp)
 
     return app
