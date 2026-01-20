@@ -74,8 +74,7 @@ def get_user_pending_confirmations(user_id: int) -> List[Match]:
     ).options(
         db.joinedload(Match.player1),
         db.joinedload(Match.player2),
-        db.joinedload(Match.tournament),
-        db.joinedload(Match.set_scores)
+        db.joinedload(Match.tournament)
     ).order_by(Match.submitted_at.asc()).all()
 
 
