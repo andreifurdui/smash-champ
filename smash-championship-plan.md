@@ -3,7 +3,7 @@
 > **Project**: .smash (styled lowercase with dot, like parent company .lumen)
 > **Version:** 1.0
 > **Last Updated:** January 20, 2026
-> **Implementation Status:** Phase 0 ✅ | Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 Ready to Start
+> **Implementation Status:** Phase 0 ✅ | Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅
 
 ---
 
@@ -1771,36 +1771,85 @@ Tasks:
 
 ---
 
-### Phase 4: Dashboard & Main View (Claude Code Session 5)
-**Duration**: ~1 hour
+### Phase 4: Dashboard & Main View ✅ COMPLETED
+**Duration**: ~1 hour (actual)
 **Goal**: Complete main dashboard with all components
+**Status**: ✅ **COMPLETED** - January 20, 2026
 
 ```
 Tasks:
-□ Dashboard layout (main + sidebar)
-□ Main area:
-  □ Active tournament standings OR bracket
-  □ Recent results (all users)
-  □ Upcoming matches (all users)
-□ Sidebar:
-  □ User's next match (VS card style)
-  □ User's recent matches (last 5)
-  □ Pending confirmation alerts
-□ Mortal Kombat styling
-  □ VS cards
-  □ Fire effects for #1
-  □ Win/loss color coding
-□ Mobile responsive layout
+☑ Dashboard layout (2-column grid, mobile-responsive)
+☑ Main area:
+  ☑ Active tournament standings with mini standings (top 3)
+  ☑ Recent matches card with set-by-set scoring
+  ☑ Stats card with wins/losses/win rate visualization
+☑ Sidebar:
+  ☑ User's next match (VS card style with MK theme)
+  ☑ User's recent matches (last 5 with scores)
+  ☑ Pending confirmation alerts (yellow warning banner)
+☑ Mortal Kombat styling
+  ☑ VS cards with fire borders and dramatic gradients
+  ☑ Fire effects (🔥) for #1 position in standings
+  ☑ Win/loss color coding (green wins, red losses)
+☑ Mobile responsive layout (stacks on mobile)
 ```
 
 **Deliverables**:
-- Dashboard shows all relevant info
-- MK-style visual design
-- Works on mobile
+- ✅ Dashboard shows all relevant info with real-time data
+- ✅ MK-style visual design with fire accents throughout
+- ✅ Works on mobile with responsive 2-column grid
+- ✅ Empty states for all cards when no data
+- ✅ Current user highlighted with fire color throughout
+- ✅ Dynamic VS cards with avatars, taglines, match info
+- ✅ Set-by-set score displays in recent matches
+- ✅ Win rate progress bar with gradient
+
+**Files Created** (2 files):
+- `app/services/match.py` - Match service layer with 5 functions:
+  - `get_user_next_match()` - Fetch scheduled matches with eager loading
+  - `get_user_recent_matches()` - Last 5 confirmed matches with scores
+  - `get_user_pending_confirmations()` - Matches awaiting confirmation
+  - `get_global_recent_matches()` - Global activity feed
+  - `get_user_stats()` - Calculate wins/losses/win rate
+- `app/services/dashboard.py` - Dashboard data aggregator combining all services
+
+**Files Modified** (3 files):
+- `app/models/user.py` - Added property aliases:
+  - `avatar` property returns `display_avatar` (template-friendly)
+  - `tagline` property with getter/setter for seamless access
+  - Database column renamed to `_tagline` internally
+- `app/routes/main.py` - Updated dashboard route:
+  - Integrated `get_dashboard_data()` service
+  - Passes `calculate_standings` function to templates
+  - Returns all data components in single call
+- `app/templates/main/dashboard.html` - Complete rebuild:
+  - Replaced 4 placeholder cards with dynamic content
+  - VS card with flex layout (mobile-responsive)
+  - Recent matches with Jinja2 set counting
+  - Tournament card with mini standings
+  - Stats card with visual progress bar
+
+**Implementation Notes**:
+- Dashboard data fetched in single aggregated call for performance
+- VS card uses flex-col on mobile, flex-row on desktop (sm:flex-row)
+- Set scores counted using Jinja2 namespaces (p1_sets.count, p2_sets.count)
+- User model properties ensure backward compatibility with existing templates
+- Eager loading optimized (removed set_scores from joinedload due to dynamic relationship)
+- Fire icon (🔥) displays on 1st place in mini standings
+- Current user highlighted throughout with fire border and font
+- Empty states provide helpful navigation links
+- Pending confirmation alerts show with yellow warning styling
+- All cards support empty states with appropriate messaging
+
+**Color Scheme**:
+- Green (#22C55E) for wins
+- Red (#EF4444) for losses
+- Fire orange (#F97316) for accents and current user
+- Dark backgrounds with subtle borders
 
 ---
 
-### Phase 5: Score Submission System (Claude Code Session 6)
+### Phase 5: Score Submission System 🔜 NEXT
 **Duration**: ~1 hour
 **Goal**: Complete score submission and confirmation flow
 
