@@ -100,13 +100,13 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 | 1 | Auth (register, login, profile) | ✅ Complete |
 | 2 | Admin tournament management | ✅ Complete |
 | 3 | User tournament registration, standings | ✅ Complete |
-| 4 | Dashboard with VS cards | 🔜 Next |
-| 5 | Score submission + confirmation flow | Planned |
+| 4 | Dashboard with VS cards | ✅ Complete |
+| 5 | Score submission + confirmation flow | 🔜 Next |
 | 6 | Gauntlet playoff bracket generation | Planned |
 | 7 | Statistics pages | Planned |
 | 8 | Polish + deployment | Planned |
 
-**Current Status**: Phase 3 complete. User tournament flow with registration, standings calculation, and fixture viewing fully implemented. Ready for Phase 4.
+**Current Status**: Phase 4 complete. Dashboard fully functional with dynamic VS cards, recent matches, tournament standings, user statistics, and mobile-responsive design. Ready for Phase 5.
 
 ## Coding Guidelines
 

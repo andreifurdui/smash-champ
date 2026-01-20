@@ -16,7 +16,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
     avatar_path = db.Column(db.String(256), nullable=True)
-    tagline = db.Column(db.String(100), nullable=True)
+    _tagline = db.Column('tagline', db.String(100), nullable=True)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -34,21 +34,36 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
     @property
-    def display_tagline(self):
-        """Return tagline or a random default."""
-        if self.tagline:
-            return self.tagline
+    def tagline(self):
+        """Return tagline or a random default (template-friendly alias)."""
+        if self._tagline:
+            return self._tagline
         from app.utils.defaults import DEFAULT_TAGLINES
         random.seed(self.id)
         return random.choice(DEFAULT_TAGLINES)
 
+    @tagline.setter
+    def tagline(self, value):
+        """Set the tagline value."""
+        self._tagline = value
+
     @property
-    def display_avatar(self):
-        """Return avatar path or a random default."""
+    def display_tagline(self):
+        """Return tagline or a random default."""
+        return self.tagline
+
+    @property
+    def avatar(self):
+        """Return avatar path or a random default (template-friendly alias)."""
         if self.avatar_path:
             return self.avatar_path
         from app.utils.avatars import get_random_default_avatar
         return get_random_default_avatar(self.id)
+
+    @property
+    def display_avatar(self):
+        """Return avatar path or a random default."""
+        return self.avatar
 
     def __repr__(self):
         return f'<User {self.username}>'

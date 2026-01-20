@@ -12,79 +12,320 @@
         <p class="text-mk-text-secondary italic">"{{ current_user.tagline }}"</p>
     </div>
 
-    <!-- Placeholder Content -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Tournaments Card -->
+    <!-- Dashboard Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Active Tournament Card -->
         <div class="card">
-            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Tournaments</h2>
-            <p class="text-mk-text-secondary mb-4">
-                Tournament features will be available in Phase 2-3.
-            </p>
-            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest text-center">
-                <p class="text-sm text-mk-text-secondary">No active tournaments</p>
+            <h2 class="text-2xl font-bold mb-6">
+                <span class="text-mk-fire">🏆</span> Your Tournaments
+            </h2>
+
+            {% set active = active_tournaments.in_progress %}
+            {% set registered = active_tournaments.registered %}
+
+            {% if active %}
+                {% for tournament in active[:2] %}  <!-- Show max 2 active tournaments -->
+                <div class="bg-mk-darker border border-mk-fire rounded-lg p-4 mb-4">
+                    <!-- Tournament Header -->
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-lg">{{ tournament.name }}</h3>
+                        {% if tournament.status == 'group_stage' %}
+                        <span class="text-xs bg-orange-500 bg-opacity-20 border border-orange-500 text-orange-500 px-2 py-1 rounded">
+                            GROUP STAGE
+                        </span>
+                        {% elif tournament.status == 'playoffs' %}
+                        <span class="text-xs bg-mk-fire bg-opacity-20 border border-mk-fire text-mk-fire px-2 py-1 rounded">
+                            PLAYOFFS
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Mini Standings (Top 3) -->
+                    {% if tournament.status == 'group_stage' %}
+                    {% set standings = calculate_standings(tournament.id) %}
+                    <div class="space-y-2 mb-3">
+                        {% for standing in standings[:3] %}
+                        <div class="flex items-center justify-between text-sm {% if standing.user.id == current_user.id %}text-mk-fire font-bold{% endif %}">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6">
+                                    {% if standing.position == 1 %}🔥{% else %}{{ standing.position }}.{% endif %}
+                                </span>
+                                <img src="{{ standing.user.avatar }}" class="w-6 h-6 rounded-full">
+                                <span>{{ standing.user.username }}</span>
+                            </div>
+                            <div class="text-mk-fire font-bold">{{ standing.group_points }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- View Details Button -->
+                    <a href="{{ url_for('tournament.detail', tournament_id=tournament.id) }}"
+                       class="text-mk-fire hover:text-mk-fire-light text-sm font-semibold">
+                        View Full Standings →
+                    </a>
+                </div>
+                {% endfor %}
+            {% elif registered %}
+                <!-- Registration Phase -->
+                <div class="bg-mk-darker border border-yellow-500 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold">{{ registered[0].name }}</h3>
+                        <span class="text-xs bg-yellow-500 bg-opacity-20 border border-yellow-500 text-yellow-500 px-2 py-1 rounded">
+                            REGISTRATION
+                        </span>
+                    </div>
+                    <p class="text-sm text-mk-text-secondary mb-3">
+                        Waiting for more players to join...
+                    </p>
+                    <div class="text-xs text-mk-text-secondary">
+                        {{ registered[0].player_count }} players registered
+                    </div>
+                    <a href="{{ url_for('tournament.detail', tournament_id=registered[0].id) }}"
+                       class="text-mk-fire hover:text-mk-fire-light text-sm font-semibold mt-2 inline-block">
+                        View Tournament →
+                    </a>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <div class="text-6xl mb-4">🎮</div>
+                    <p class="text-mk-text-secondary mb-4">No active tournaments</p>
+                    <a href="{{ url_for('tournament.list') }}" class="btn-primary inline-block">
+                        Browse Tournaments
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Pending Confirmations Alert -->
+            {% if pending_confirmations %}
+            <div class="mt-4 p-4 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg">
+                <div class="flex items-center gap-2 text-yellow-500 font-bold mb-2">
+                    <span>⚠️</span>
+                    <span>{{ pending_confirmations|length }} match(es) need confirmation</span>
+                </div>
+                <p class="text-xs text-mk-text-secondary mb-3">
+                    Your opponents have submitted scores. Please review and confirm.
+                </p>
+                <a href="#" class="text-yellow-500 hover:text-yellow-400 text-sm font-semibold">
+                    Review Now → (Phase 5)
+                </a>
             </div>
+            {% endif %}
         </div>
 
         <!-- Recent Matches Card -->
         <div class="card">
-            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Recent Matches</h2>
-            <p class="text-mk-text-secondary mb-4">
-                Match tracking will be available in Phase 5.
-            </p>
-            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest text-center">
-                <p class="text-sm text-mk-text-secondary">No matches yet</p>
+            <h2 class="text-2xl font-bold mb-6">
+                <span class="text-mk-fire">📊</span> Your Recent Matches
+            </h2>
+
+            {% if recent_matches %}
+            <div class="space-y-3">
+                {% for match in recent_matches %}
+                <div class="bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
+                    <!-- Players -->
+                    <div class="flex items-center justify-between mb-2">
+                        <!-- Player 1 -->
+                        <div class="flex items-center gap-2 flex-1">
+                            <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
+                                 class="w-8 h-8 rounded-full">
+                            <span class="{% if match.player1_id == current_user.id %}font-bold{% endif %}
+                                         {% if match.winner_id == match.player1_id %}text-green-500{% else %}text-red-500{% endif %}">
+                                {{ match.player1.username }}
+                            </span>
+                        </div>
+
+                        <!-- Score Display -->
+                        <div class="px-3 py-1 bg-mk-darkest rounded text-sm font-mono">
+                            {% set p1_sets = namespace(count=0) %}
+                            {% set p2_sets = namespace(count=0) %}
+                            {% for set_score in match.set_scores %}
+                                {% if set_score.player1_score > set_score.player2_score %}
+                                    {% set p1_sets.count = p1_sets.count + 1 %}
+                                {% else %}
+                                    {% set p2_sets.count = p2_sets.count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% endif %}">
+                                {{ p1_sets.count }}
+                            </span>
+                            <span class="text-mk-text-secondary mx-1">-</span>
+                            <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-bold{% endif %}">
+                                {{ p2_sets.count }}
+                            </span>
+                        </div>
+
+                        <!-- Player 2 -->
+                        <div class="flex items-center gap-2 flex-1 justify-end">
+                            <span class="{% if match.player2_id == current_user.id %}font-bold{% endif %}
+                                         {% if match.winner_id == match.player2_id %}text-green-500{% else %}text-red-500{% endif %}">
+                                {{ match.player2.username }}
+                            </span>
+                            <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
+                                 class="w-8 h-8 rounded-full">
+                        </div>
+                    </div>
+
+                    <!-- Match Details -->
+                    <div class="flex justify-between text-xs text-mk-text-secondary mt-2">
+                        <span>{{ match.tournament.name }}</span>
+                        <span>{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
+                    </div>
+
+                    <!-- Individual Set Scores -->
+                    <div class="mt-2 pt-2 border-t border-mk-darkest text-xs text-mk-text-secondary">
+                        {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                        <span class="inline-block mr-3">
+                            Set {{ set_score.set_number }}:
+                            <span class="font-mono">{{ set_score.player1_score }}-{{ set_score.player2_score }}</span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">🎯</div>
+                <p class="text-mk-text-secondary">No matches played yet</p>
+                <p class="text-sm text-mk-text-secondary mt-2">
+                    Your match history will appear here
+                </p>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Quick Stats Card -->
+        <!-- Stats Card -->
         <div class="card">
-            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Your Stats</h2>
-            <p class="text-mk-text-secondary mb-4">
-                Statistics will be available in Phase 7.
-            </p>
-            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest">
-                <div class="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <div class="text-2xl font-bold">-</div>
-                        <div class="text-xs text-mk-text-secondary">Wins</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl font-bold">-</div>
-                        <div class="text-xs text-mk-text-secondary">Losses</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl font-bold">-</div>
-                        <div class="text-xs text-mk-text-secondary">Win Rate</div>
+            <h2 class="text-2xl font-bold mb-6">
+                <span class="text-mk-fire">📈</span> Your Stats
+            </h2>
+
+            {% if stats.total > 0 %}
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <!-- Wins -->
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-500">{{ stats.wins }}</div>
+                    <div class="text-xs text-mk-text-secondary mt-1">Wins</div>
+                </div>
+
+                <!-- Losses -->
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-500">{{ stats.losses }}</div>
+                    <div class="text-xs text-mk-text-secondary mt-1">Losses</div>
+                </div>
+
+                <!-- Win Rate -->
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-mk-fire">{{ stats.win_rate }}%</div>
+                    <div class="text-xs text-mk-text-secondary mt-1">Win Rate</div>
+                </div>
+            </div>
+
+            <!-- Win Rate Bar -->
+            <div class="mb-4">
+                <div class="w-full bg-mk-darkest rounded-full h-4 overflow-hidden">
+                    <div class="bg-gradient-to-r from-mk-fire to-mk-fire-light h-full transition-all duration-500"
+                         style="width: {{ stats.win_rate }}%">
                     </div>
                 </div>
             </div>
+
+            <!-- Record Display -->
+            <div class="text-center text-sm text-mk-text-secondary">
+                Overall Record: <span class="text-mk-fire font-bold">{{ stats.wins }}-{{ stats.losses }}</span>
+                <span class="text-xs">({{ stats.total }} matches)</span>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">📊</div>
+                <p class="text-mk-text-secondary">No matches played</p>
+                <p class="text-sm text-mk-text-secondary mt-2">
+                    Play your first match to see stats
+                </p>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Next Match Card -->
         <div class="card">
-            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Next Match</h2>
-            <p class="text-mk-text-secondary mb-4">
-                VS card displays will be available in Phase 4.
-            </p>
-            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest text-center">
-                <p class="text-sm text-mk-text-secondary">No upcoming matches</p>
-            </div>
-        </div>
-    </div>
+            <h2 class="text-2xl font-bold mb-6">
+                <span class="text-mk-fire">⚔️</span> Your Next Match
+            </h2>
 
-    <!-- Phase Progress Info -->
-    <div class="mt-8 card bg-mk-darker">
-        <h3 class="text-lg font-bold mb-2 text-mk-fire">Development Progress</h3>
-        <p class="text-sm text-mk-text-secondary">
-            Phase 1 (Authentication) is complete! More features coming in future phases:
-        </p>
-        <ul class="text-sm text-mk-text-secondary mt-2 space-y-1 list-disc list-inside">
-            <li>Phase 2-3: Tournament creation and registration</li>
-            <li>Phase 4: Dashboard with Mortal Kombat-style VS cards</li>
-            <li>Phase 5: Score submission and confirmation</li>
-            <li>Phase 6: Gauntlet playoff bracket</li>
-            <li>Phase 7: Comprehensive statistics</li>
-        </ul>
+            {% if next_match %}
+            <!-- VS Card with Enhanced Styling -->
+            <div class="relative bg-gradient-to-r from-mk-darkest via-mk-darker to-mk-darkest border-2 border-mk-fire rounded-lg p-6 mb-4">
+                <!-- Tournament Name -->
+                <div class="text-center text-xs text-mk-text-secondary mb-4">
+                    {{ next_match.tournament.name }} - {{ next_match.phase|upper }}
+                </div>
+
+                <!-- VS Layout -->
+                <div class="flex flex-col sm:flex-row items-center justify-between">
+                    <!-- Player 1 (Current User or Opponent) -->
+                    {% set is_player1 = next_match.player1_id == current_user.id %}
+                    {% set player = next_match.player1 if is_player1 else next_match.player2 %}
+                    {% set opponent = next_match.player2 if is_player1 else next_match.player1 %}
+
+                    <div class="flex-1 text-center mb-4 sm:mb-0">
+                        <img src="{{ player.avatar }}" alt="{{ player.username }}"
+                             class="w-24 h-24 rounded-full border-4 border-mk-fire mx-auto mb-3 shadow-lg">
+                        <div class="font-bold text-xl text-mk-fire">{{ player.username }}</div>
+                        <div class="text-xs italic text-mk-text-secondary mt-1">"{{ player.tagline }}"</div>
+                    </div>
+
+                    <!-- VS Badge -->
+                    <div class="px-6 py-3 bg-mk-fire text-mk-dark font-black text-2xl rounded-lg mx-6 shadow-xl transform hover:scale-110 transition-transform">
+                        VS
+                    </div>
+
+                    <!-- Player 2 (Opponent or Current User) -->
+                    <div class="flex-1 text-center mt-4 sm:mt-0">
+                        <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
+                             class="w-24 h-24 rounded-full border-4 border-mk-darkest mx-auto mb-3 shadow-lg">
+                        <div class="font-bold text-xl">{{ opponent.username }}</div>
+                        <div class="text-xs italic text-mk-text-secondary mt-1">"{{ opponent.tagline }}"</div>
+                    </div>
+                </div>
+
+                <!-- Match Info Footer -->
+                <div class="mt-6 pt-4 border-t border-mk-darkest text-center">
+                    <div class="text-sm text-mk-text-secondary">
+                        Best of 3 Sets • First to 11 Points
+                    </div>
+                    {% if next_match.scheduled_at %}
+                    <div class="text-xs text-mk-fire mt-2">
+                        Scheduled: {{ next_match.scheduled_at.strftime('%b %d, %I:%M %p') }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Button (Phase 5) -->
+                <div class="mt-4">
+                    <a href="#" class="btn-primary w-full text-center opacity-50 cursor-not-allowed">
+                        Submit Score (Phase 5)
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">🏓</div>
+                <p class="text-mk-text-secondary">No upcoming matches</p>
+                <p class="text-sm text-mk-text-secondary mt-2">
+                    Register for a tournament to get matched up!
+                </p>
+                <a href="{{ url_for('tournament.list') }}" class="btn-primary mt-4 inline-block">
+                    Browse Tournaments
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
