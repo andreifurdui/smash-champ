@@ -74,7 +74,8 @@ def get_user_pending_confirmations(user_id: int) -> List[Match]:
     ).options(
         db.joinedload(Match.player1),
         db.joinedload(Match.player2),
-        db.joinedload(Match.tournament)
+        db.joinedload(Match.tournament),
+        db.joinedload(Match.set_scores)
     ).order_by(Match.submitted_at.asc()).all()
 
 
@@ -131,3 +132,223 @@ def get_user_stats(user_id: int) -> dict:
         'total': total,
         'win_rate': round(win_rate, 1)
     }
+
+
+def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Match:
+    """
+    Submit match score.
+
+    Args:
+        match_id: Match ID
+        user_id: User submitting (must be participant)
+        sets_data: List of dicts with player1_score, player2_score
+
+    Returns:
+        Updated Match object
+
+    Raises:
+        ValueError: If validation fails
+    """
+    from app.models import SetScore
+    from datetime import datetime
+
+    match = Match.query.get_or_404(match_id)
+
+    # Validate user is participant
+    if user_id not in (match.player1_id, match.player2_id):
+        raise ValueError('You are not a participant in this match')
+
+    # Validate match status
+    if match.status != MatchStatus.SCHEDULED.value:
+        raise ValueError(f'Cannot submit score for match in {match.status} status')
+
+    # Validate sets (should be 2 or 3)
+    if not sets_data or len(sets_data) < 2 or len(sets_data) > 3:
+        raise ValueError('Match must have 2 or 3 sets')
+
+    # Create SetScore records and determine winner
+    player1_sets_won = 0
+    player2_sets_won = 0
+
+    for i, set_data in enumerate(sets_data):
+        set_score = SetScore(
+            match_id=match.id,
+            set_number=i + 1,
+            player1_score=set_data['player1_score'],
+            player2_score=set_data['player2_score']
+        )
+
+        # Validate set score
+        if not set_score.is_valid_score:
+            raise ValueError(f'Set {i+1} has invalid score: {set_data["player1_score"]}-{set_data["player2_score"]}')
+
+        # Count sets won
+        if set_data['player1_score'] > set_data['player2_score']:
+            player1_sets_won += 1
+        else:
+            player2_sets_won += 1
+
+        db.session.add(set_score)
+
+    # Determine winner (first to 2 sets)
+    if player1_sets_won >= 2:
+        match.winner_id = match.player1_id
+    elif player2_sets_won >= 2:
+        match.winner_id = match.player2_id
+    else:
+        raise ValueError('No player won 2 sets')
+
+    # Update match status
+    match.status = MatchStatus.PENDING_CONFIRMATION.value
+    match.submitted_by_id = user_id
+    match.submitted_at = datetime.utcnow()
+
+    db.session.commit()
+    return match
+
+
+def confirm_match_score(match_id: int, user_id: int) -> Match:
+    """
+    Confirm match score (opponent confirms submitted score).
+
+    Args:
+        match_id: Match ID
+        user_id: User confirming (must be opponent, not submitter)
+
+    Returns:
+        Updated Match object
+
+    Raises:
+        ValueError: If validation fails
+    """
+    from datetime import datetime
+
+    match = Match.query.get_or_404(match_id)
+
+    # Validate user is participant
+    if user_id not in (match.player1_id, match.player2_id):
+        raise ValueError('You are not a participant in this match')
+
+    # Validate user is NOT submitter
+    if user_id == match.submitted_by_id:
+        raise ValueError('You cannot confirm your own submission')
+
+    # Validate match status
+    if match.status != MatchStatus.PENDING_CONFIRMATION.value:
+        raise ValueError(f'Cannot confirm match in {match.status} status')
+
+    # Update match status
+    match.status = MatchStatus.CONFIRMED.value
+    match.confirmed_by_id = user_id
+    match.confirmed_at = datetime.utcnow()
+    match.played_at = datetime.utcnow()
+
+    # Update statistics
+    _update_match_statistics(match)
+
+    db.session.commit()
+    return match
+
+
+def dispute_match_score(match_id: int, user_id: int) -> Match:
+    """
+    Dispute match score (opponent disputes submitted score).
+
+    Args:
+        match_id: Match ID
+        user_id: User disputing (must be opponent, not submitter)
+
+    Returns:
+        Updated Match object
+
+    Raises:
+        ValueError: If validation fails
+    """
+    match = Match.query.get_or_404(match_id)
+
+    # Validate user is participant
+    if user_id not in (match.player1_id, match.player2_id):
+        raise ValueError('You are not a participant in this match')
+
+    # Validate user is NOT submitter
+    if user_id == match.submitted_by_id:
+        raise ValueError('You cannot dispute your own submission')
+
+    # Validate match status
+    if match.status != MatchStatus.PENDING_CONFIRMATION.value:
+        raise ValueError(f'Cannot dispute match in {match.status} status')
+
+    # Update match status (admin will resolve)
+    match.status = MatchStatus.DISPUTED.value
+
+    db.session.commit()
+    return match
+
+
+def _update_match_statistics(match: Match) -> None:
+    """
+    Update Registration statistics after match confirmation.
+
+    Args:
+        match: Confirmed Match object
+
+    Raises:
+        ValueError: If registrations not found
+    """
+    from app.models import Registration, SetScore
+
+    # Get registrations for both players
+    reg1 = Registration.query.filter_by(
+        user_id=match.player1_id,
+        tournament_id=match.tournament_id
+    ).first()
+
+    reg2 = Registration.query.filter_by(
+        user_id=match.player2_id,
+        tournament_id=match.tournament_id
+    ).first()
+
+    if not reg1 or not reg2:
+        raise ValueError('Registration records not found for match participants')
+
+    # Get set scores
+    set_scores = SetScore.query.filter_by(match_id=match.id).all()
+
+    # Calculate stats for each player
+    p1_sets_won = 0
+    p1_sets_lost = 0
+    p1_points_won = 0
+    p1_points_lost = 0
+
+    for set_score in set_scores:
+        p1_points_won += set_score.player1_score
+        p1_points_lost += set_score.player2_score
+
+        if set_score.player1_score > set_score.player2_score:
+            p1_sets_won += 1
+        else:
+            p1_sets_lost += 1
+
+    p2_sets_won = p1_sets_lost
+    p2_sets_lost = p1_sets_won
+    p2_points_won = p1_points_lost
+    p2_points_lost = p1_points_won
+
+    # Update Registration records
+    reg1.sets_won += p1_sets_won
+    reg1.sets_lost += p1_sets_lost
+    reg1.points_won += p1_points_won
+    reg1.points_lost += p1_points_lost
+
+    reg2.sets_won += p2_sets_won
+    reg2.sets_lost += p2_sets_lost
+    reg2.points_won += p2_points_won
+    reg2.points_lost += p2_points_lost
+
+    # Update group points (2 for win, 1 for loss)
+    if match.winner_id == match.player1_id:
+        reg1.group_points += 2
+        reg2.group_points += 1
+    else:
+        reg1.group_points += 1
+        reg2.group_points += 2

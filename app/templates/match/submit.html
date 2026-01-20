@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Score - {{ match.tournament.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-mk-fire mb-2">Submit Match Score</h1>
+        <p class="text-mk-text-secondary">{{ match.tournament.name }} - {{ match.phase|upper }}</p>
+    </div>
+
+    <!-- VS Card -->
+    <div class="relative bg-gradient-to-r from-mk-darkest via-mk-darker to-mk-darkest border-2 border-mk-fire rounded-lg p-6 mb-8">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <!-- Current Player (YOU) -->
+            <div class="flex-1 text-center">
+                <img src="{{ current_player.avatar }}" alt="{{ current_player.username }}"
+                     class="w-24 h-24 rounded-full border-4 border-mk-fire mx-auto mb-3 shadow-lg">
+                <div class="font-bold text-xl text-mk-fire">YOU</div>
+                <div class="text-lg">{{ current_player.username }}</div>
+                <div class="text-xs italic text-mk-text-secondary mt-1">"{{ current_player.tagline }}"</div>
+            </div>
+
+            <!-- VS Badge -->
+            <div class="px-6 py-3 bg-mk-fire text-mk-dark font-black text-2xl rounded-lg shadow-xl">
+                VS
+            </div>
+
+            <!-- Opponent -->
+            <div class="flex-1 text-center">
+                <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
+                     class="w-24 h-24 rounded-full border-4 border-mk-darkest mx-auto mb-3 shadow-lg">
+                <div class="font-bold text-xl">{{ opponent.username }}</div>
+                <div class="text-xs italic text-mk-text-secondary mt-1">"{{ opponent.tagline }}"</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Form -->
+    <form method="POST" class="space-y-6">
+        {{ form.hidden_tag() }}
+
+        <!-- Info Box -->
+        <div class="bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg p-4">
+            <div class="flex items-center gap-2 text-yellow-500 font-bold mb-2">
+                <span>⚠️</span>
+                <span>Important</span>
+            </div>
+            <p class="text-sm text-mk-text-secondary">
+                Your opponent will need to confirm this score. It will auto-confirm after 24 hours if not disputed.
+            </p>
+        </div>
+
+        <!-- Set 1 -->
+        <div class="card bg-mk-darker border-2 border-mk-fire">
+            <h3 class="text-xl font-bold text-mk-fire mb-4">Set 1</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    {{ form.set1_player1.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set1_player1(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set1_player1.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set1_player1.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.set1_player2.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set1_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set1_player2.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set1_player2.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Set 2 -->
+        <div class="card bg-mk-darker border-2 border-mk-fire">
+            <h3 class="text-xl font-bold text-mk-fire mb-4">Set 2</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    {{ form.set2_player1.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set2_player1(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set2_player1.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set2_player1.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.set2_player2.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set2_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set2_player2.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set2_player2.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Set 3 -->
+        <div class="card bg-mk-darker border-2 border-mk-darkest">
+            <h3 class="text-xl font-bold mb-4">Set 3 <span class="text-sm text-mk-text-secondary font-normal">(if needed)</span></h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    {{ form.set3_player1.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set3_player1(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set3_player1.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set3_player1.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.set3_player2.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set3_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set3_player2.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set3_player2.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-4">
+            {{ form.submit(class="btn-primary flex-1") }}
+            <a href="{{ url_for('main.dashboard') }}" class="btn-secondary flex-1 text-center">Cancel</a>
+        </div>
+    </form>
+
+    <!-- Rules Reminder -->
+    <div class="mt-8 text-center text-sm text-mk-text-secondary">
+        <p>Table Tennis Rules: First to 11 points, must win by 2 • Best of 3 sets</p>
+    </div>
+</div>
+{% endblock %}

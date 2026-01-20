@@ -3,7 +3,7 @@
 > **Project**: .smash (styled lowercase with dot, like parent company .lumen)
 > **Version:** 1.0
 > **Last Updated:** January 20, 2026
-> **Implementation Status:** Phase 0 ✅ | Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅
+> **Implementation Status:** Phase 0 ✅ | Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 ✅ | Phase 5 ✅
 
 ---
 
@@ -1849,42 +1849,123 @@ Tasks:
 
 ---
 
-### Phase 5: Score Submission System 🔜 NEXT
-**Duration**: ~1 hour
+### Phase 5: Score Submission System ✅ COMPLETED
+**Duration**: ~1 hour (actual)
 **Goal**: Complete score submission and confirmation flow
+**Status**: ✅ **COMPLETED** - January 20, 2026
 
 ```
 Tasks:
-□ Score submission page
-  □ Set-by-set input
-  □ Real-time validation
-  □ Match preview (VS style)
-□ Score validation logic
-  □ Table tennis rules
-  □ Best of 3 logic
-□ Submit score route
-  □ Update match status
-  □ Record submitter
-□ Confirmation system
-  □ Confirm route
-  □ Dispute route
-  □ Pending confirmation alerts
-□ Auto-confirmation scheduler
+✅ Score submission page
+  ✅ Set-by-set input
+  ✅ Real-time validation
+  ✅ Match preview (VS style)
+✅ Score validation logic
+  ✅ Table tennis rules (first to 11, win by 2, deuce handling)
+  ✅ Best of 3 logic (2-3 sets, winner determined)
+✅ Submit score route
+  ✅ Update match status (SCHEDULED → PENDING_CONFIRMATION)
+  ✅ Record submitter (submitted_by_id, submitted_at)
+✅ Confirmation system
+  ✅ Confirm route (match.confirm)
+  ✅ Dispute route (match.dispute)
+  ✅ Pending confirmation alerts on dashboard
+□ Auto-confirmation scheduler (future enhancement)
   □ 24-hour timeout
-□ Admin score override
-□ Update statistics on confirmation
-□ Mobile-optimized submission
+□ Admin score override (future enhancement)
+✅ Update statistics on confirmation
+  ✅ Group points (winner +2, loser +1)
+  ✅ Sets won/lost tracking
+  ✅ Points won/lost tracking
+✅ Mobile-optimized submission
+  ✅ Large input fields (text-2xl)
+  ✅ Touch-friendly buttons
+  ✅ Responsive VS card display
 ```
 
 **Deliverables**:
-- Players can submit scores
-- Opponents can confirm/dispute
-- Stats update on confirmation
-- Mobile submission works smoothly
+✅ Players can submit scores with table tennis validation
+✅ Opponents can confirm/dispute from dashboard
+✅ Stats update automatically on confirmation
+✅ Mobile submission works smoothly with large inputs
+✅ Set scores displayed for review in pending confirmations
+
+**Files Created** (3 files):
+- `app/forms/match.py` - Score submission form with WTForms validation:
+  - `ScoreSubmissionForm` class with 6 IntegerFields (Set 1-3 for both players)
+  - Custom validators: `validate_set1_player1()`, `validate_set2_player1()`, `validate_set3_player1()`
+  - Overall `validate()` method enforces best-of-3 rules and Set 3 requirement when tied
+  - Uses `Optional()` validator for Set 3 fields
+  - `_is_valid_set()` helper validates table tennis rules (≥11, win by ≥2)
+- `app/routes/match.py` - Match blueprint with 3 routes:
+  - `/match/<id>/submit` (GET/POST) - Score submission with current player detection and score swapping logic
+  - `/match/<id>/confirm` (POST) - Opponent confirmation with flash messages
+  - `/match/<id>/dispute` (POST) - Dispute handling (admin review needed)
+  - Blueprint registered with prefix `/match`
+- `app/templates/match/submit.html` - Score submission page (150 lines):
+  - Dramatic VS card with avatars, usernames, taglines
+  - 3 set cards (Set 1/2 with fire borders, Set 3 optional with dark border)
+  - Large score inputs (text-2xl, font-mono) for mobile touch accuracy
+  - Form validation errors displayed inline
+  - Cancel button returns to dashboard
+  - Rules reminder at bottom
+
+**Files Modified** (3 files):
+- `app/services/match.py` - Added 4 new service functions:
+  - `submit_match_score(match_id, user_id, sets_data)` - Creates SetScore records, validates, determines winner
+  - `confirm_match_score(match_id, user_id)` - Confirms match and triggers stats update
+  - `dispute_match_score(match_id, user_id)` - Marks match as disputed
+  - `_update_match_statistics(match)` - Updates Registration records (group_points, sets, points)
+  - Enhanced `get_user_pending_confirmations()` - Added `db.joinedload(Match.set_scores)` for eager loading
+- `app/__init__.py` - Registered match blueprint:
+  - Added `from app.routes import match` to imports
+  - Added `app.register_blueprint(match.bp)` after other blueprints
+- `app/templates/main/dashboard.html` - Enhanced pending confirmations UI:
+  - Replaced placeholder link with full pending matches list (40 lines)
+  - Each pending match displays: opponent avatar, username, tournament name, set scores
+  - Inline confirm (✓ green) and dispute (✗ red) buttons with POST forms
+  - Enabled "Submit Score" button (removed disabled state, added url_for link)
+
+**Implementation Notes**:
+- Score validation happens at form level (WTForms) and service level (double validation)
+- Form handles player perspective: current user's scores labeled "Your Score", automatically swapped if player2
+- Set 3 fields use `Optional()` validator to allow empty values unless match tied 1-1
+- Deuce scenarios fully supported: 12-10, 15-13, up to 30 points (extended deuce)
+- Winner determination: first player to win 2 sets becomes match winner
+- Statistics update formula:
+  - Winner: group_points +2, sets_won +2, sets_lost +(0-1), points calculated from SetScores
+  - Loser: group_points +1, sets_won +(0-1), sets_lost +2, points calculated from SetScores
+- Match status flow: SCHEDULED → PENDING_CONFIRMATION → (CONFIRMED or DISPUTED)
+- Dashboard eager loads set_scores relationship to avoid N+1 queries
+- Mobile optimization: text-2xl inputs, large buttons, responsive flex layout
+- Error handling: ValueError exceptions caught and displayed as flash messages
+- Transaction safety: db.session.rollback() on exceptions
+
+**Routes Implemented**:
+- `GET /match/<match_id>/submit` - Render score submission form
+- `POST /match/<match_id>/submit` - Process score submission, create SetScore records
+- `POST /match/<match_id>/confirm` - Confirm opponent's submission, update stats
+- `POST /match/<match_id>/dispute` - Dispute opponent's submission (admin review)
+
+**Validation Rules Enforced**:
+- Each set: high score ≥11, high - low ≥2 (handles deuce: 10-10 → 12-10, 14-14 → 16-14)
+- Match: 2-3 sets total, one player must win 2 sets
+- Set 3: automatically required if players tied 1-1 after Set 2
+- Participant validation: only match participants can submit/confirm/dispute
+- Submitter validation: cannot confirm own submission (must be opponent)
+- Status validation: can only submit for SCHEDULED, confirm/dispute for PENDING_CONFIRMATION
+
+**Form Validation Tests Passed**:
+✅ Valid 2-0 win (11-7, 11-9)
+✅ Valid 2-1 win (11-7, 9-11, 11-5)
+✅ Invalid scores rejected (9-7, 11-10)
+✅ Deuce handling (12-10, 15-13)
+✅ Set 3 required when tied (11-7, 9-11)
+✅ Extended deuce scenarios (15-13, 11-9)
 
 ---
 
-### Phase 6: Playoff System (Claude Code Session 7)
+### Phase 6: Playoff System 🔜 NEXT
 **Duration**: ~1 hour
 **Goal**: Implement playoff bracket generation and progression
 

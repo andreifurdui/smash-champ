@@ -101,12 +101,12 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 | 2 | Admin tournament management | ✅ Complete |
 | 3 | User tournament registration, standings | ✅ Complete |
 | 4 | Dashboard with VS cards | ✅ Complete |
-| 5 | Score submission + confirmation flow | 🔜 Next |
-| 6 | Gauntlet playoff bracket generation | Planned |
+| 5 | Score submission + confirmation flow | ✅ Complete |
+| 6 | Gauntlet playoff bracket generation | 🔜 Next |
 | 7 | Statistics pages | Planned |
 | 8 | Polish + deployment | Planned |
 
-**Current Status**: Phase 4 complete. Dashboard fully functional with dynamic VS cards, recent matches, tournament standings, user statistics, and mobile-responsive design. Ready for Phase 5.
+**Current Status**: Phase 5 complete. Players can submit match scores with table tennis validation (best of 3, first to 11, win by 2). Opponents receive pending confirmations with confirm/dispute options. Statistics (group points, sets, points) update automatically on confirmation. Ready for Phase 6.
 
 ## Coding Guidelines
 

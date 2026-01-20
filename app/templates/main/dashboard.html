@@ -107,9 +107,45 @@
                 <p class="text-xs text-mk-text-secondary mb-3">
                     Your opponents have submitted scores. Please review and confirm.
                 </p>
-                <a href="#" class="text-yellow-500 hover:text-yellow-400 text-sm font-semibold">
-                    Review Now → (Phase 5)
-                </a>
+
+                <!-- Pending Matches List -->
+                <div class="space-y-3 mt-4">
+                    {% for match in pending_confirmations %}
+                    <div class="bg-mk-darkest rounded-lg p-3">
+                        <!-- Match Info -->
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <img src="{{ match.get_opponent(current_user.id).avatar }}" class="w-8 h-8 rounded-full">
+                                <span class="font-semibold">vs {{ match.get_opponent(current_user.id).username }}</span>
+                            </div>
+                            <span class="text-xs text-mk-text-secondary">{{ match.tournament.name }}</span>
+                        </div>
+
+                        <!-- Set Scores -->
+                        <div class="text-xs text-mk-text-secondary mb-3">
+                            {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                            <span class="inline-block mr-2">
+                                Set {{ set_score.set_number }}: {{ set_score.player1_score }}-{{ set_score.player2_score }}
+                            </span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2">
+                            <form method="POST" action="{{ url_for('match.confirm', match_id=match.id) }}" class="flex-1">
+                                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                                    ✓ Confirm
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('match.dispute', match_id=match.id) }}" class="flex-1">
+                                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors">
+                                    ✗ Dispute
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         </div>
@@ -305,10 +341,10 @@
                     {% endif %}
                 </div>
 
-                <!-- Action Button (Phase 5) -->
+                <!-- Action Button -->
                 <div class="mt-4">
-                    <a href="#" class="btn-primary w-full text-center opacity-50 cursor-not-allowed">
-                        Submit Score (Phase 5)
+                    <a href="{{ url_for('match.submit', match_id=next_match.id) }}" class="btn-primary w-full text-center">
+                        Submit Score
                     </a>
                 </div>
             </div>
