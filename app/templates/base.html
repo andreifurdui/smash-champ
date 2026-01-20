@@ -51,7 +51,7 @@
                         <a href="{{ url_for('tournament.list') }}" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
                             Tournaments
                         </a>
-                        <a href="#" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
+                        <a href="{{ url_for('stats.leaderboard') }}" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
                             Stats
                         </a>
                         {% if current_user.is_admin %}

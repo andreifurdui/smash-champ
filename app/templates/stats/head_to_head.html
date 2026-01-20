@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Head to Head - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center">Head-to-Head Comparison</h1>
+
+    <!-- Player Selection -->
+    <div class="card mb-6">
+        <form method="GET" class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label class="block text-sm font-medium mb-2">Player 1</label>
+                <select name="user1" class="w-full bg-mk-darker border border-mk-darkest rounded px-3 py-2">
+                    <option value="">Select player...</option>
+                    {% for user in all_users %}
+                    <option value="{{ user.id }}" {% if user1_id == user.id %}selected{% endif %}>
+                        {{ user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium mb-2">Player 2</label>
+                <select name="user2" class="w-full bg-mk-darker border border-mk-darkest rounded px-3 py-2">
+                    <option value="">Select player...</option>
+                    {% for user in all_users %}
+                    <option value="{{ user.id }}" {% if user2_id == user.id %}selected{% endif %}>
+                        {{ user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="btn-primary">Compare</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- H2H Results -->
+    {% if h2h_data %}
+    <div class="card mb-6">
+        <div class="flex items-center justify-between">
+            <!-- Player 1 -->
+            <div class="flex-1 text-center">
+                <img src="{{ h2h_data.user1.avatar }}" class="w-20 h-20 rounded-full mx-auto mb-2 border-4
+                     {% if h2h_data.user1_wins > h2h_data.user2_wins %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
+                <div class="font-bold text-lg">{{ h2h_data.user1.username }}</div>
+                <div class="text-3xl font-black text-mk-fire mt-2">{{ h2h_data.user1_wins }}</div>
+                <div class="text-xs text-mk-text-secondary">Wins</div>
+            </div>
+
+            <!-- VS Badge -->
+            <div class="px-6 py-3 bg-mk-fire text-mk-dark font-black text-2xl rounded-lg">VS</div>
+
+            <!-- Player 2 -->
+            <div class="flex-1 text-center">
+                <img src="{{ h2h_data.user2.avatar }}" class="w-20 h-20 rounded-full mx-auto mb-2 border-4
+                     {% if h2h_data.user2_wins > h2h_data.user1_wins %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
+                <div class="font-bold text-lg">{{ h2h_data.user2.username }}</div>
+                <div class="text-3xl font-black text-mk-fire mt-2">{{ h2h_data.user2_wins }}</div>
+                <div class="text-xs text-mk-text-secondary">Wins</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match History -->
+    {% if h2h_data.matches %}
+    <div class="card">
+        <h2 class="text-xl font-bold mb-4">Match History ({{ h2h_data.total_matches }} matches)</h2>
+        <div class="space-y-2">
+            {% for match in h2h_data.matches %}
+            <div class="p-3 bg-mk-darker rounded">
+                <div class="flex items-center justify-between text-sm">
+                    <div>
+                        <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% endif %}">
+                            {{ match.player1.username }}
+                        </span>
+                        vs
+                        <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-bold{% endif %}">
+                            {{ match.player2.username }}
+                        </span>
+                    </div>
+                    <span class="text-xs text-mk-text-secondary">
+                        {{ match.played_at.strftime('%b %d, %Y') if match.played_at }}
+                    </span>
+                </div>
+                <div class="mt-1 text-xs text-mk-text-secondary">
+                    {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                    <span class="mr-2">{{ set_score.player1_score }}-{{ set_score.player2_score }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="card text-center py-8">
+        <p class="text-mk-text-secondary">These players haven't faced each other yet</p>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Hero Header -->
+    <div class="mb-8 text-center">
+        <h1 class="text-4xl font-black mb-2">
+            <span class="text-mk-fire">HALL OF CHAMPIONS</span>
+        </h1>
+        <p class="text-mk-text-secondary">All-time greatest players</p>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="card mb-8">
+        <h2 class="text-2xl font-bold mb-4 text-mk-fire">All-Time Leaderboard</h2>
+
+        {% if leaderboard %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-mk-darkest">
+                        <th class="text-left py-3 px-4">Rank</th>
+                        <th class="text-left py-3 px-4">Player</th>
+                        <th class="text-center py-3 px-4">Wins</th>
+                        <th class="text-center py-3 px-4">Losses</th>
+                        <th class="text-center py-3 px-4">Win Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in leaderboard %}
+                    <tr class="border-b border-mk-darkest {% if entry.user.id == current_user.id %}bg-mk-fire bg-opacity-10{% endif %}">
+                        <td class="py-3 px-4">
+                            {% if entry.rank <= 3 %}
+                                <span class="text-2xl">
+                                    {% if entry.rank == 1 %}🥇
+                                    {% elif entry.rank == 2 %}🥈
+                                    {% else %}🥉
+                                    {% endif %}
+                                </span>
+                            {% else %}
+                                <span class="text-mk-text-secondary">#{{ entry.rank }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-2">
+                                <img src="{{ entry.user.avatar }}" class="w-8 h-8 rounded-full">
+                                <a href="{{ url_for('stats.user_stats', user_id=entry.user.id) }}"
+                                   class="font-semibold hover:text-mk-fire">
+                                    {{ entry.user.username }}
+                                </a>
+                            </div>
+                        </td>
+                        <td class="text-center py-3 px-4 text-green-500 font-bold">{{ entry.wins }}</td>
+                        <td class="text-center py-3 px-4 text-red-500">{{ entry.losses }}</td>
+                        <td class="text-center py-3 px-4 text-mk-fire font-bold">{{ entry.win_rate }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-mk-text-secondary py-8">No matches played yet</p>
+        {% endif %}
+    </div>
+
+    <!-- Hall of Fame -->
+    <div class="card">
+        <h2 class="text-2xl font-bold mb-4 text-mk-fire">🏆 Hall of Fame</h2>
+
+        {% if winners %}
+        <div class="space-y-3">
+            {% for winner in winners %}
+            <div class="flex items-center justify-between p-3 bg-mk-darker rounded-lg">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">
+                        {% if winner.position == 1 %}🥇
+                        {% elif winner.position == 2 %}🥈
+                        {% elif winner.position == 3 %}🥉
+                        {% endif %}
+                    </span>
+                    <img src="{{ winner.user.avatar }}" class="w-10 h-10 rounded-full">
+                    <div>
+                        <div class="font-bold">{{ winner.user.username }}</div>
+                        <div class="text-xs text-mk-text-secondary">{{ winner.tournament.name }}</div>
+                    </div>
+                </div>
+                <div class="text-xs text-mk-text-secondary">
+                    {{ winner.awarded_at.strftime('%b %d, %Y') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center text-mk-text-secondary py-8">No tournaments completed yet</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

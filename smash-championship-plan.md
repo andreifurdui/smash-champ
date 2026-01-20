@@ -2007,37 +2007,40 @@ Tasks:
 
 ---
 
-### Phase 7: Statistics & History 🔜 NEXT
+### Phase 7: Statistics & History ✅ COMPLETE
 **Duration**: ~45 minutes
 **Goal**: Comprehensive statistics and history pages
 
 ```
 Tasks:
-□ User statistics page
-  □ Overall record
-  □ Tournament history
-  □ Win rate over time
-  □ Head-to-head records
-□ Global statistics page
-  □ All-time leaderboard
-  □ Tournament winners hall of fame
-  □ Interesting stats (longest match, etc.)
-□ Head-to-head comparison page
-  □ Select two players
-  □ Show history and stats
-□ Match history page
-  □ Filterable by tournament/player
-  □ Pagination
+✅ User statistics page
+  ✅ Overall record
+  ✅ Tournament history
+  □ Win rate over time (deferred to Phase 8)
+  ✅ Head-to-head records
+✅ Global statistics page
+  ✅ All-time leaderboard
+  ✅ Tournament winners hall of fame
+  □ Interesting stats (longest match, etc.) (deferred to Phase 8)
+✅ Head-to-head comparison page
+  ✅ Select two players
+  ✅ Show history and stats
+✅ Match history page
+  ✅ Filterable by tournament/player
+  ✅ Pagination
 ```
 
 **Deliverables**:
-- Rich statistics for users
-- Global leaderboards
-- Head-to-head comparisons
+- ✅ Rich statistics for users
+- ✅ Global leaderboards
+- ✅ Head-to-head comparisons
+- ✅ Service layer with 5 core functions (stats.py)
+- ✅ 4 new routes and templates
+- ✅ Navigation integration (navbar, dashboard, profile)
 
 ---
 
-### Phase 8: Polish & Deployment (Claude Code Session 9)
+### Phase 8: Polish & Deployment 🔜 NEXT
 **Duration**: ~1 hour
 **Goal**: Final polish, testing, and deployment
 

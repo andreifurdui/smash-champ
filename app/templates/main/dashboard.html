@@ -303,6 +303,14 @@
                 Overall Record: <span class="text-mk-fire font-bold">{{ stats.wins }}-{{ stats.losses }}</span>
                 <span class="text-xs">({{ stats.total }} matches)</span>
             </div>
+
+            <!-- View Full Stats Link -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('stats.user_stats', user_id=current_user.id) }}"
+                   class="text-mk-fire hover:text-mk-fire-light text-sm font-semibold">
+                    View Full Stats →
+                </a>
+            </div>
             {% else %}
             <!-- Empty State -->
             <div class="text-center py-12">

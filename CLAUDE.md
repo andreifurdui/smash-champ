@@ -55,7 +55,7 @@ app/
 ├── extensions.py        # db, login_manager, migrate instances
 ├── models/              # User, Tournament, Registration, Match, SetScore
 ├── routes/              # Blueprints: auth, main, tournament, match, admin, stats, api
-├── services/            # Business logic (tournament.py, match.py, standings.py, bracket.py)
+├── services/            # Business logic (tournament.py, match.py, standings.py, bracket.py, stats.py)
 ├── forms/               # Flask-WTF forms
 ├── templates/           # Jinja2 (base.html + components/ for reusables)
 ├── static/              # CSS, JS, img/default_avatars/
@@ -103,10 +103,10 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 | 4 | Dashboard with VS cards | ✅ Complete |
 | 5 | Score submission + confirmation flow | ✅ Complete |
 | 6 | Gauntlet playoff bracket generation | ✅ Complete |
-| 7 | Statistics pages | 🔜 Next |
-| 8 | Polish + deployment | Planned |
+| 7 | Statistics pages | ✅ Complete |
+| 8 | Polish + deployment | 🔜 Next |
 
-**Current Status**: Phase 6 complete. Full Gauntlet playoff system implemented with automatic bracket generation, winner advancement, and tournament completion. Admin can start playoffs when group stage finishes. Winners automatically advance to challenge next higher seed. Final positions recorded in TournamentWinner table. Bracket visualization available for both admins and users. Ready for Phase 7.
+**Current Status**: Phase 7 complete. Comprehensive statistics system implemented with global leaderboard, user stats pages, head-to-head comparisons, match history browser, and hall of fame. All service functions tested and working. Navigation integrated in navbar, dashboard, and profile pages. Ready for Phase 8 (Polish + Deployment).
 
 ## Coding Guidelines
 

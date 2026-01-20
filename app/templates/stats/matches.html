@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Match History - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Match History</h1>
+
+    <!-- Filters -->
+    <div class="card mb-6">
+        <form method="GET" class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label class="block text-sm font-medium mb-2">Tournament</label>
+                <select name="tournament" class="w-full bg-mk-darker border border-mk-darkest rounded px-3 py-2">
+                    <option value="">All tournaments</option>
+                    {% for tournament in tournaments %}
+                    <option value="{{ tournament.id }}" {% if current_tournament == tournament.id %}selected{% endif %}>
+                        {{ tournament.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium mb-2">Player</label>
+                <select name="user" class="w-full bg-mk-darker border border-mk-darkest rounded px-3 py-2">
+                    <option value="">All players</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if current_user_filter == user.id %}selected{% endif %}>
+                        {{ user.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="btn-primary">Filter</button>
+                <a href="{{ url_for('stats.matches') }}" class="btn-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Match List -->
+    <div class="card">
+        {% if matches %}
+        <div class="space-y-3">
+            {% for match in matches %}
+            <div class="p-4 bg-mk-darker rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <img src="{{ match.player1.avatar }}" class="w-8 h-8 rounded-full">
+                        <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
+                            {{ match.player1.username }}
+                        </span>
+                        <span class="text-mk-text-secondary">vs</span>
+                        <img src="{{ match.player2.avatar }}" class="w-8 h-8 rounded-full">
+                        <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
+                            {{ match.player2.username }}
+                        </span>
+                    </div>
+                    <div class="text-xs text-mk-text-secondary">
+                        {{ match.tournament.name }} • {{ match.played_at.strftime('%b %d, %Y') if match.played_at }}
+                    </div>
+                </div>
+                <div class="text-xs text-mk-text-secondary">
+                    {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                    <span class="mr-2">Set {{ set_score.set_number }}: {{ set_score.player1_score }}-{{ set_score.player2_score }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if total > per_page %}
+        <div class="mt-6 flex items-center justify-between">
+            <div class="text-sm text-mk-text-secondary">
+                Showing {{ ((page-1) * per_page + 1) }} to {{ [page * per_page, total]|min }} of {{ total }} matches
+            </div>
+            <div class="flex gap-2">
+                {% if page > 1 %}
+                <a href="?page={{ page - 1 }}{% if current_tournament %}&tournament={{ current_tournament }}{% endif %}{% if current_user_filter %}&user={{ current_user_filter }}{% endif %}"
+                   class="btn-secondary">Previous</a>
+                {% endif %}
+                {% if page * per_page < total %}
+                <a href="?page={{ page + 1 }}{% if current_tournament %}&tournament={{ current_tournament }}{% endif %}{% if current_user_filter %}&user={{ current_user_filter }}{% endif %}"
+                   class="btn-primary">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="text-center text-mk-text-secondary py-8">No matches found</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
