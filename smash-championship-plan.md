@@ -2,7 +2,8 @@
 
 > **Project**: .smash (styled lowercase with dot, like parent company .lumen)
 > **Version:** 1.0
-> **Last Updated:** January 2025
+> **Last Updated:** January 20, 2026
+> **Implementation Status:** Phase 0 Complete ✅ | Phase 1 Ready to Start
 
 ---
 
@@ -261,7 +262,7 @@ class Registration(db.Model):
     tournament_id = db.Column(db.Integer, db.ForeignKey('tournaments.id'), nullable=False)
     seed = db.Column(db.Integer)  # Assigned after group stage
     group_number = db.Column(db.Integer, default=1)  # For multiple groups
-    group_points = db.Column(db.Integer, default=0)  # 3 for win, 1 for draw, 0 for loss
+    group_points = db.Column(db.Integer, default=0)  # 2 for win, 1 for loss, 0 for walkover loss
     group_position = db.Column(db.Integer)  # Calculated after group stage
     sets_won = db.Column(db.Integer, default=0)
     sets_lost = db.Column(db.Integer, default=0)
@@ -389,9 +390,11 @@ Each tournament consists of two phases:
 #### Points System
 | Result | Points |
 |--------|--------|
-| Win | 3 |
-| Draw (rare, if both forfeit) | 1 |
-| Loss | 0 |
+| Win | 2 |
+| Loss | 1 |
+| Walkover Loss | 0 |
+
+> **Note**: Originally planned as 3-1-0, implemented as 2-1-0 for simpler scoring with no draws in table tennis.
 
 #### Tiebreaker Rules (in order)
 1. **Head-to-head record** between tied players
@@ -402,14 +405,16 @@ Each tournament consists of two phases:
 
 #### Example Group Table
 ```
-┌──────┬──────────────┬────┬───┬───┬───┬────────┬────────┬─────┐
-│ Pos  │ Player       │ P  │ W │ D │ L │ Sets   │ Points │ Pts │
-├──────┼──────────────┼────┼───┼───┼───┼────────┼────────┼─────┤
-│ 1    │ DragonSlayer │ 6  │ 5 │ 0 │ 1 │ 10-3   │ 112-78 │ 15  │
-│ 2    │ PaddleMaster │ 6  │ 4 │ 0 │ 2 │ 9-5    │ 105-82 │ 12  │
-│ 3    │ SpinKing     │ 6  │ 3 │ 0 │ 3 │ 7-7    │ 95-91  │ 9   │
-│ 4    │ TableTitan   │ 6  │ 0 │ 0 │ 6 │ 2-12   │ 64-125 │ 0   │
-└──────┴──────────────┴────┴───┴───┴───┴────────┴────────┴─────┘
+┌──────┬──────────────┬────┬───┬───┬────────┬────────┬─────┐
+│ Pos  │ Player       │ P  │ W │ L │ Sets   │ Points │ Pts │
+├──────┼──────────────┼────┼───┼───┼────────┼────────┼─────┤
+│ 1    │ DragonSlayer │ 6  │ 5 │ 1 │ 10-3   │ 112-78 │ 11  │
+│ 2    │ PaddleMaster │ 6  │ 4 │ 2 │ 9-5    │ 105-82 │ 10  │
+│ 3    │ SpinKing     │ 6  │ 3 │ 3 │ 7-7    │ 95-91  │ 9   │
+│ 4    │ TableTitan   │ 6  │ 0 │ 6 │ 2-12   │ 64-125 │ 6   │
+└──────┴──────────────┴────┴───┴───┴────────┴────────┴─────┘
+
+Note: Pts = (Wins × 2) + (Losses × 1)
 ```
 
 ### Playoff Stage
@@ -814,11 +819,11 @@ Tables:
 │  ├──────┬──────────────┬────┬───┬───┬───┬─────────┤  │ │    VS     │ │
 │  │ #    │ Player       │ P  │ W │ L │ SD│ PTS     │  │ │ SpinKing  │ │
 │  ├──────┼──────────────┼────┼───┼───┼───┼─────────┤  │ │           │ │
-│  │ 1 🔥 │ DragonSlayer │ 4  │ 4 │ 0 │+7 │ 12      │  │ │ Tomorrow  │ │
-│  │ 2    │ PaddleMaster │ 4  │ 3 │ 1 │+5 │ 9       │  │ └───────────┘ │
+│  │ 1 🔥 │ DragonSlayer │ 4  │ 4 │ 0 │+7 │ 8       │  │ │ Tomorrow  │ │
+│  │ 2    │ PaddleMaster │ 4  │ 3 │ 1 │+5 │ 7       │  │ └───────────┘ │
 │  │ 3    │ SpinKing     │ 4  │ 2 │ 2 │+1 │ 6       │  │ [Submit Score]│
-│  │ 4    │ TableTitan   │ 4  │ 1 │ 3 │-4 │ 3       │  │               │
-│  │ 5    │ NetNinja     │ 4  │ 0 │ 4 │-9 │ 0       │  │ ───────────── │
+│  │ 4    │ TableTitan   │ 4  │ 1 │ 3 │-4 │ 5       │  │               │
+│  │ 5    │ NetNinja     │ 4  │ 0 │ 4 │-9 │ 4       │  │ ───────────── │
 │  └──────┴──────────────┴────┴───┴───┴───┴─────────┘  │               │
 │                                                        │ YOUR RECENT   │
 │  OR (if playoffs):                                     │ MATCHES       │
@@ -954,7 +959,7 @@ Tables:
     <td class="stats">4</td>
     <td class="stats">0</td>
     <td class="set-diff positive">+7</td>
-    <td class="points">12</td>
+    <td class="points">8</td>
 </tr>
 ```
 
@@ -1307,9 +1312,9 @@ Wednesday: vs DragonSlayer
 TOURNAMENT STANDINGS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-#1 DragonSlayer - 15 pts 🔥
-#2 You - 12 pts
-#3 PaddleMaster - 9 pts
+#1 DragonSlayer - 10 pts 🔥
+#2 You - 9 pts
+#3 PaddleMaster - 7 pts
 #4 SpinKing - 6 pts
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1536,27 +1541,54 @@ echo "✅ Deployment complete!"
 
 ## 12. Implementation Phases
 
-### Phase 0: Project Setup (Claude Code Session 1)
+### Phase 0: Project Setup ✅ COMPLETED
 **Duration**: ~30 minutes
 **Goal**: Initialize project structure and basic configuration
+**Status**: ✅ **COMPLETED** - January 20, 2026
 
 ```
 Tasks:
-□ Create project directory structure
-□ Initialize Python virtual environment
-□ Create requirements.txt with dependencies
-□ Set up Flask application factory pattern
-□ Configure SQLAlchemy and Flask-Migrate
-□ Create .env.example and config.py
-□ Initialize database models (User, Tournament, Match, etc.)
-□ Run initial migration
-□ Create basic run.py for development
+☑ Create project directory structure
+☑ Initialize Python virtual environment
+☑ Create requirements.txt with dependencies
+☑ Set up Flask application factory pattern
+☑ Configure SQLAlchemy and Flask-Migrate
+☑ Create .env.example and config.py
+☑ Initialize database models (User, Tournament, Match, etc.)
+☑ Run initial migration
+☑ Create basic run.py for development
 ```
 
 **Deliverables**:
-- Working Flask app that starts
-- Database tables created
-- Basic project structure in place
+- ✅ Working Flask app that starts on port 5000
+- ✅ Database tables created (6 tables: users, tournaments, registrations, matches, set_scores, tournament_winners)
+- ✅ Basic project structure in place
+- ✅ All models with enums, relationships, and validation properties
+- ✅ Utility files created (defaults.py with 20 taglines, avatars.py with auto-discovery)
+- ✅ Virtual environment with all dependencies installed
+
+**Implementation Notes**:
+- Tournament model uses string-based enums (`TournamentStatus`, `PlayoffFormat`) for better database compatibility
+- Match model includes comprehensive status tracking (`MatchStatus`, `MatchPhase`) with enums
+- Registration model includes `group_points` defaulting to 0 (scoring: 2 for win, 1 for loss in group stage)
+- SetScore model includes `is_valid_score` property for table tennis rule validation
+- User model has `display_tagline` and `display_avatar` properties that return random defaults if not set
+- All relationships properly configured with `back_populates` for bidirectional access
+- Unique constraints added: (user_id, tournament_id) for registrations, (match_id, set_number) for set_scores
+- Default avatars directory created with .gitkeep file and auto-discovery system ready
+- Models include helper methods: `get_opponent()`, `is_pending_confirmation()`, `set_difference`, etc.
+
+**Database Schema Verification**:
+```
+Tables created:
+- alembic_version (migration tracking)
+- tournaments (with status, phase, playoff_format)
+- users (with email/username indexes)
+- matches (with all player/submitter/winner relationships)
+- registrations (with group stage stats)
+- tournament_winners (with position tracking)
+- set_scores (with match reference)
+```
 
 ---
 
