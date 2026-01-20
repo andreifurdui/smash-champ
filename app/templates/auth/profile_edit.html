@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="card">
+        <h2 class="text-3xl font-bold text-center mb-2 text-mk-fire">Edit Profile</h2>
+        <p class="text-center text-mk-text-secondary mb-6">Update your information</p>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            {{ form.hidden_tag() }}
+
+            <!-- Current Avatar -->
+            <div class="text-center">
+                <label class="block text-sm font-medium mb-2">Current Avatar</label>
+                <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}" class="avatar-large mx-auto">
+            </div>
+
+            <!-- Username -->
+            <div>
+                <label for="username" class="block text-sm font-medium mb-1">{{ form.username.label }}</label>
+                {{ form.username(class="input-field") }}
+                {% if form.username.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.username.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium mb-1">{{ form.email.label }}</label>
+                {{ form.email(class="input-field") }}
+                {% if form.email.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.email.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tagline -->
+            <div>
+                <label for="tagline" class="block text-sm font-medium mb-1">{{ form.tagline.label }}</label>
+                {{ form.tagline(class="input-field", rows="2", maxlength="100", id="tagline-input") }}
+                <div class="text-right text-sm text-mk-text-secondary mt-1">
+                    <span id="tagline-count">0</span>/100
+                </div>
+                {% if form.tagline.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.tagline.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- New Avatar -->
+            <div>
+                <label for="avatar" class="block text-sm font-medium mb-1">
+                    Upload New Avatar (Optional)
+                </label>
+                {{ form.avatar(class="input-field", accept="image/*") }}
+                <p class="text-xs text-mk-text-secondary mt-1">Max 16MB. Formats: PNG, JPG, GIF, WEBP</p>
+                {% if form.avatar.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.avatar.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                <button type="submit" class="btn-primary flex-1">
+                    Save Changes
+                </button>
+                <a href="{{ url_for('auth.profile') }}" class="btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter for tagline
+    const taglineInput = document.getElementById('tagline-input');
+    const taglineCount = document.getElementById('tagline-count');
+
+    if (taglineInput && taglineCount) {
+        taglineInput.addEventListener('input', function() {
+            taglineCount.textContent = this.value.length;
+        });
+
+        // Initialize count on page load
+        taglineCount.textContent = taglineInput.value.length;
+    }
+</script>
+{% endblock %}

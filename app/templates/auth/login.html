@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Login - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="card">
+        <h2 class="text-3xl font-bold text-center mb-2 text-mk-fire">Welcome Back</h2>
+        <p class="text-center text-mk-text-secondary mb-6">Login to continue your championship journey</p>
+
+        <form method="POST" class="space-y-4">
+            {{ form.hidden_tag() }}
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium mb-1">{{ form.email.label }}</label>
+                {{ form.email(class="input-field", placeholder="your@email.com", autofocus=true) }}
+                {% if form.email.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.email.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password" class="block text-sm font-medium mb-1">{{ form.password.label }}</label>
+                {{ form.password(class="input-field", placeholder="Enter your password") }}
+                {% if form.password.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.password.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center">
+                {{ form.remember_me(class="h-4 w-4 text-mk-fire focus:ring-mk-fire border-mk-darkest rounded") }}
+                <label for="remember_me" class="ml-2 block text-sm">
+                    {{ form.remember_me.label.text }}
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button type="submit" class="btn-primary w-full">
+                    Login
+                </button>
+            </div>
+
+            <!-- Register Link -->
+            <div class="text-center text-sm text-mk-text-secondary">
+                Don't have an account?
+                <a href="{{ url_for('auth.register') }}" class="text-mk-fire hover:text-mk-fire-light">
+                    Register here
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

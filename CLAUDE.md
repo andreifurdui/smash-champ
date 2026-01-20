@@ -94,17 +94,19 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 
 ## Implementation Phases
 
-| Phase | Focus |
-|-------|-------|
-| 0 | Project setup, models, migrations |
-| 1 | Auth (register, login, profile) |
-| 2 | Admin tournament management |
-| 3 | User tournament registration, standings |
-| 4 | Dashboard with VS cards |
-| 5 | Score submission + confirmation flow |
-| 6 | Gauntlet playoff bracket generation |
-| 7 | Statistics pages |
-| 8 | Polish + deployment |
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 0 | Project setup, models, migrations | ✅ Complete |
+| 1 | Auth (register, login, profile) | ✅ Complete |
+| 2 | Admin tournament management | 🔜 Next |
+| 3 | User tournament registration, standings | Planned |
+| 4 | Dashboard with VS cards | Planned |
+| 5 | Score submission + confirmation flow | Planned |
+| 6 | Gauntlet playoff bracket generation | Planned |
+| 7 | Statistics pages | Planned |
+| 8 | Polish + deployment | Planned |
+
+**Current Status**: Phase 1 complete. All authentication routes, forms, templates, and styling implemented. Ready for Phase 2.
 
 ## Coding Guidelines
 
@@ -127,6 +129,13 @@ class MatchQueryBuilder:
     def for_user(self, user_id): ...
     def build(self): ...
 ```
+
+## Documentation Rules
+
+**NEVER create status reports, completion documents, or summary files after implementing features.** Instead:
+1. Update `smash-championship-plan.md` to check off completed items
+2. Update this `CLAUDE.md` file to reflect current implementation status
+3. Keep both files as the single source of truth
 
 ## When in Doubt
 

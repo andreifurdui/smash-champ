@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}.smash - Office Table Tennis Championship{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <!-- Hero Section -->
+    <div class="mb-12">
+        <h1 class="text-6xl font-bold text-mk-fire mb-4">.smash</h1>
+        <p class="text-2xl text-mk-text-secondary mb-2">Office Table Tennis Championship</p>
+        <p class="text-lg text-mk-text-secondary italic">Mortal Kombat meets ping pong</p>
+    </div>
+
+    <!-- Description -->
+    <div class="max-w-2xl mx-auto mb-12">
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4">Welcome to the Arena</h2>
+            <p class="text-mk-text-secondary mb-4">
+                Compete in intense table tennis battles with your colleagues. Track your stats,
+                climb the rankings, and prove you're the ultimate champion.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-6">
+                <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest">
+                    <div class="text-mk-fire font-bold mb-2">Group Stage</div>
+                    <p class="text-mk-text-secondary">Round-robin competition with double fixtures</p>
+                </div>
+                <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest">
+                    <div class="text-mk-fire font-bold mb-2">Gauntlet Playoffs</div>
+                    <p class="text-mk-text-secondary">Climb from the bottom to claim victory</p>
+                </div>
+                <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest">
+                    <div class="text-mk-fire font-bold mb-2">Live Stats</div>
+                    <p class="text-mk-text-secondary">Track every point, set, and match</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+        <a href="{{ url_for('auth.register') }}" class="btn-primary text-lg px-8 py-3">
+            Join the Fight
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn-secondary text-lg px-8 py-3">
+            Login
+        </a>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="mt-12 text-sm text-mk-text-secondary">
+        <p>Built for .lumen office warriors</p>
+    </div>
+</div>
+{% endblock %}

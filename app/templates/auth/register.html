@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Register - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="card">
+        <h2 class="text-3xl font-bold text-center mb-2 text-mk-fire">Join .smash</h2>
+        <p class="text-center text-mk-text-secondary mb-6">Create your account and start crushing it</p>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            {{ form.hidden_tag() }}
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium mb-1">{{ form.email.label }}</label>
+                {{ form.email(class="input-field", placeholder="your@email.com") }}
+                {% if form.email.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.email.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Username -->
+            <div>
+                <label for="username" class="block text-sm font-medium mb-1">{{ form.username.label }}</label>
+                {{ form.username(class="input-field", placeholder="Choose a username (3-20 chars)") }}
+                {% if form.username.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.username.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password" class="block text-sm font-medium mb-1">{{ form.password.label }}</label>
+                {{ form.password(class="input-field", placeholder="Min 8 characters") }}
+                {% if form.password.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.password.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+                <label for="confirm_password" class="block text-sm font-medium mb-1">{{ form.confirm_password.label }}</label>
+                {{ form.confirm_password(class="input-field", placeholder="Confirm your password") }}
+                {% if form.confirm_password.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.confirm_password.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tagline (Optional) -->
+            <div>
+                <label for="tagline" class="block text-sm font-medium mb-1">
+                    {{ form.tagline.label }}
+                    <span class="text-mk-text-secondary text-xs">(leave blank for random cringe)</span>
+                </label>
+                {{ form.tagline(class="input-field", rows="2", placeholder="Your battle cry... (max 100 chars)", maxlength="100", id="tagline-input") }}
+                <div class="text-right text-sm text-mk-text-secondary mt-1">
+                    <span id="tagline-count">0</span>/100
+                </div>
+                {% if form.tagline.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.tagline.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Avatar (Optional) -->
+            <div>
+                <label for="avatar" class="block text-sm font-medium mb-1">
+                    {{ form.avatar.label }}
+                    <span class="text-mk-text-secondary text-xs">(leave blank for random default)</span>
+                </label>
+                {{ form.avatar(class="input-field", accept="image/*") }}
+                <p class="text-xs text-mk-text-secondary mt-1">Max 16MB. Formats: PNG, JPG, GIF, WEBP</p>
+                {% if form.avatar.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.avatar.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button type="submit" class="btn-primary w-full">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center text-sm text-mk-text-secondary">
+                Already have an account?
+                <a href="{{ url_for('auth.login') }}" class="text-mk-fire hover:text-mk-fire-light">
+                    Login here
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter for tagline
+    const taglineInput = document.getElementById('tagline-input');
+    const taglineCount = document.getElementById('tagline-count');
+
+    if (taglineInput && taglineCount) {
+        taglineInput.addEventListener('input', function() {
+            taglineCount.textContent = this.value.length;
+        });
+
+        // Initialize count on page load
+        taglineCount.textContent = taglineInput.value.length;
+    }
+</script>
+{% endblock %}

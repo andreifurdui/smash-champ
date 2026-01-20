@@ -1,5 +1,8 @@
 """Default taglines for users who don't provide their own."""
 
+import random
+from app.utils.avatars import get_default_avatars
+
 DEFAULT_TAGLINES = [
     "Fear the paddle.",
     "I came, I saw, I served.",
@@ -22,3 +25,17 @@ DEFAULT_TAGLINES = [
     "Ready to crush dreams and serve aces.",
     "Legends don't retire, they play ping pong.",
 ]
+
+
+def get_random_tagline():
+    """Return a random tagline from the default list."""
+    return random.choice(DEFAULT_TAGLINES)
+
+
+def get_random_avatar():
+    """Return a random avatar path from available default avatars."""
+    avatars = get_default_avatars()
+    if avatars:
+        return random.choice(avatars)
+    # Fallback to a simple default if no avatars found
+    return '/static/img/default_avatar.png'

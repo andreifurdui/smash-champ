@@ -21,9 +21,9 @@ def create_app(config_name='default'):
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # Register blueprints (placeholder for Phase 1+)
-    # from app.routes import auth, main, tournament, match, admin, stats, api
-    # app.register_blueprint(auth.bp)
-    # etc.
+    # Register blueprints
+    from app.routes import auth, main
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(main.bp)
 
     return app

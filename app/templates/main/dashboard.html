@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Welcome Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">
+            Welcome back, <span class="text-mk-fire">{{ current_user.username }}</span>
+        </h1>
+        <p class="text-mk-text-secondary italic">"{{ current_user.tagline }}"</p>
+    </div>
+
+    <!-- Placeholder Content -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Tournaments Card -->
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Tournaments</h2>
+            <p class="text-mk-text-secondary mb-4">
+                Tournament features will be available in Phase 2-3.
+            </p>
+            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest text-center">
+                <p class="text-sm text-mk-text-secondary">No active tournaments</p>
+            </div>
+        </div>
+
+        <!-- Recent Matches Card -->
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Recent Matches</h2>
+            <p class="text-mk-text-secondary mb-4">
+                Match tracking will be available in Phase 5.
+            </p>
+            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest text-center">
+                <p class="text-sm text-mk-text-secondary">No matches yet</p>
+            </div>
+        </div>
+
+        <!-- Quick Stats Card -->
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Your Stats</h2>
+            <p class="text-mk-text-secondary mb-4">
+                Statistics will be available in Phase 7.
+            </p>
+            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest">
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl font-bold">-</div>
+                        <div class="text-xs text-mk-text-secondary">Wins</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold">-</div>
+                        <div class="text-xs text-mk-text-secondary">Losses</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold">-</div>
+                        <div class="text-xs text-mk-text-secondary">Win Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Match Card -->
+        <div class="card">
+            <h2 class="text-2xl font-bold mb-4 text-mk-fire">Next Match</h2>
+            <p class="text-mk-text-secondary mb-4">
+                VS card displays will be available in Phase 4.
+            </p>
+            <div class="bg-mk-darker p-4 rounded-lg border border-mk-darkest text-center">
+                <p class="text-sm text-mk-text-secondary">No upcoming matches</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase Progress Info -->
+    <div class="mt-8 card bg-mk-darker">
+        <h3 class="text-lg font-bold mb-2 text-mk-fire">Development Progress</h3>
+        <p class="text-sm text-mk-text-secondary">
+            Phase 1 (Authentication) is complete! More features coming in future phases:
+        </p>
+        <ul class="text-sm text-mk-text-secondary mt-2 space-y-1 list-disc list-inside">
+            <li>Phase 2-3: Tournament creation and registration</li>
+            <li>Phase 4: Dashboard with Mortal Kombat-style VS cards</li>
+            <li>Phase 5: Score submission and confirmation</li>
+            <li>Phase 6: Gauntlet playoff bracket</li>
+            <li>Phase 7: Comprehensive statistics</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
