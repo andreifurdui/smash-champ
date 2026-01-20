@@ -23,7 +23,7 @@ def get_random_default_avatar(seed=None):
     """Get a random default avatar path, seeded by user ID for consistency."""
     avatars = get_default_avatars()
     if not avatars:
-        return '/static/img/default_avatar.png'
+        return '/static/img/default_avatar.svg'
 
     if seed is not None:
         random.seed(seed)

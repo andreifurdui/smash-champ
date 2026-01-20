@@ -38,4 +38,4 @@ def get_random_avatar():
     if avatars:
         return random.choice(avatars)
     # Fallback to a simple default if no avatars found
-    return '/static/img/default_avatar.png'
+    return '/static/img/default_avatar.svg'

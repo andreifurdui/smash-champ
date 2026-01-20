@@ -1064,7 +1064,7 @@ def save_avatar(file, username):
         image.save(filepath, optimize=True, quality=85)
         
         return filename
-    return 'default_avatar.png'
+    return 'default_avatar.svg'
 
 # Default avatars (pre-generated)
 DEFAULT_AVATARS = [
