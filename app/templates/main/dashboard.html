@@ -59,10 +59,38 @@
                     </div>
                     {% endif %}
 
+                    <!-- Playoff Bracket (Compact) -->
+                    {% if tournament.status in ['playoffs', 'completed'] %}
+                    {% set playoff_matches = tournament.matches|selectattr('phase', 'equalto', 'playoff')|sort(attribute='bracket_round')|list %}
+                    <div class="space-y-2 mb-3">
+                        <div class="text-xs font-bold text-mk-text-secondary mb-2">
+                            {% if tournament.status == 'completed' %}🏆 Final Results{% else %}Gauntlet Bracket{% endif %}
+                        </div>
+                        {% for match in playoff_matches[:3] %}
+                        <div class="flex items-center justify-between text-xs border border-mk-darkest rounded p-2
+                                    {% if match.status == 'confirmed' %}bg-green-500 bg-opacity-5{% endif %}">
+                            <div class="flex items-center gap-2">
+                                <span class="text-mk-text-secondary">R{{ match.bracket_round }}:</span>
+                                <span {% if match.winner_id == match.player1_id %}class="text-mk-fire font-bold"{% endif %}>
+                                    {{ match.player1.username }}
+                                </span>
+                                <span class="text-mk-text-secondary">vs</span>
+                                <span {% if match.winner_id == match.player2_id %}class="text-mk-fire font-bold"{% endif %}>
+                                    {{ match.player2.username }}
+                                </span>
+                            </div>
+                            {% if match.status == 'confirmed' %}
+                                <span class="text-green-500">✓</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
                     <!-- View Details Button -->
                     <a href="{{ url_for('tournament.detail', tournament_id=tournament.id) }}"
                        class="text-mk-fire hover:text-mk-fire-light text-sm font-semibold">
-                        View Full Standings →
+                        View Full {% if tournament.status in ['playoffs', 'completed'] %}Bracket{% else %}Standings{% endif %} →
                     </a>
                 </div>
                 {% endfor %}

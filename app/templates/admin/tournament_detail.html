@@ -179,11 +179,153 @@
             {% endfor %}
         </div>
 
-        <div class="mt-4 p-4 bg-mk-fire bg-opacity-10 border border-mk-fire rounded-lg">
-            <p class="text-mk-fire text-sm">
-                <strong>Note:</strong> Score submission functionality will be available in Phase 5
-            </p>
+    </div>
+
+    <!-- Group Stage Complete / Start Playoffs -->
+    {% if tournament.status == 'group_stage' %}
+        {% set pending_count = tournament.matches|selectattr('phase', 'equalto', 'group')|selectattr('status', 'in', ['scheduled', 'pending_confirmation'])|list|length %}
+
+        {% if pending_count == 0 %}
+        <div class="mt-6 p-4 bg-green-500 bg-opacity-10 border border-green-500 rounded-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-green-500 font-bold mb-1">Group Stage Complete!</div>
+                    <p class="text-sm text-mk-text-secondary">All matches confirmed. Ready to start playoffs.</p>
+                </div>
+                <form method="POST" action="{{ url_for('admin.tournament_start_playoffs', tournament_id=tournament.id) }}" onsubmit="return confirm('Start playoffs and generate Gauntlet bracket? This cannot be undone.');">
+                    <button type="submit" class="btn-primary">
+                        Start Playoffs
+                    </button>
+                </form>
+            </div>
         </div>
+        {% else %}
+        <div class="mt-6 p-4 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg">
+            <div class="text-yellow-500 font-bold mb-1">Group Stage In Progress</div>
+            <p class="text-sm text-mk-text-secondary">{{ pending_count }} match(es) pending. Complete all matches to start playoffs.</p>
+        </div>
+        {% endif %}
+    {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Playoff Bracket -->
+    {% if tournament.status in ['playoffs', 'completed'] %}
+    <div class="card mt-6">
+        <h2 class="text-2xl font-bold mb-6 text-mk-fire">Playoff Bracket - Gauntlet</h2>
+
+        {% set playoff_matches = tournament.matches|selectattr('phase', 'equalto', 'playoff')|sort(attribute='bracket_round')|list %}
+
+        {% if playoff_matches %}
+        <div class="space-y-4">
+            {% for match in playoff_matches %}
+            <div class="relative p-4 border-2 rounded-lg
+                        {% if match.status == 'confirmed' %}border-green-500 bg-green-500 bg-opacity-5
+                        {% elif match.status == 'pending_confirmation' %}border-yellow-500 bg-yellow-500 bg-opacity-5
+                        {% else %}border-mk-fire{% endif %}">
+
+                <!-- Round Label -->
+                <div class="text-xs font-bold text-mk-text-secondary mb-2">
+                    {% if match.bracket_round == playoff_matches|length %}
+                        CHAMPIONSHIP FINAL - Round {{ match.bracket_round }}
+                    {% else %}
+                        ROUND {{ match.bracket_round }}
+                    {% endif %}
+                </div>
+
+                <!-- Match Info -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <!-- Player 1 -->
+                        <div class="text-center {% if match.winner_id == match.player1_id %}text-mk-fire font-bold{% endif %}">
+                            <img src="{{ match.player1.avatar }}" class="w-12 h-12 rounded-full mx-auto mb-1">
+                            <div>{{ match.player1.username }}</div>
+                            {% if match.status == 'confirmed' %}
+                                {% set reg1 = match.player1.registrations|selectattr('tournament_id', 'equalto', tournament.id)|first %}
+                                {% if reg1 and reg1.seed %}
+                                    <div class="text-xs text-mk-text-secondary">(Seed #{{ reg1.seed }})</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- VS Badge -->
+                        <div class="px-4 py-2 bg-mk-fire text-mk-dark font-black text-lg rounded">VS</div>
+
+                        <!-- Player 2 -->
+                        <div class="text-center {% if match.winner_id == match.player2_id %}text-mk-fire font-bold{% endif %}">
+                            <img src="{{ match.player2.avatar }}" class="w-12 h-12 rounded-full mx-auto mb-1">
+                            <div>{{ match.player2.username }}</div>
+                            {% if match.status == 'confirmed' %}
+                                {% set reg2 = match.player2.registrations|selectattr('tournament_id', 'equalto', tournament.id)|first %}
+                                {% if reg2 and reg2.seed %}
+                                    <div class="text-xs text-mk-text-secondary">(Seed #{{ reg2.seed }})</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div class="text-right">
+                        {% if match.status == 'confirmed' %}
+                            <div class="text-green-500 font-bold">✓ Confirmed</div>
+                            <div class="text-sm text-mk-text-secondary">Winner: {{ match.winner.username }}</div>
+                        {% elif match.status == 'pending_confirmation' %}
+                            <div class="text-yellow-500 font-bold">⏳ Pending</div>
+                        {% else %}
+                            <div class="text-mk-text-secondary">Scheduled</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Set Scores -->
+                {% if match.set_scores|length > 0 %}
+                <div class="mt-2 text-xs text-mk-text-secondary">
+                    {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                    <span class="inline-block mr-2">
+                        Set {{ set_score.set_number }}: {{ set_score.player1_score }}-{{ set_score.player2_score }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-mk-text-secondary">No playoff matches generated yet.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Tournament Complete Banner -->
+    {% if tournament.status == 'completed' %}
+    <div class="card mt-6 bg-gradient-to-r from-yellow-500 to-orange-500">
+        <h2 class="text-2xl font-black text-mk-dark mb-4">🏆 Tournament Complete!</h2>
+
+        {% set winners = tournament.winners|sort(attribute='position')|list %}
+        {% if winners %}
+        <div class="space-y-2">
+            {% for winner in winners[:3] %}
+            <div class="flex items-center gap-3 p-3 bg-mk-darkest rounded">
+                <div class="text-2xl">
+                    {% if winner.position == 1 %}🥇
+                    {% elif winner.position == 2 %}🥈
+                    {% elif winner.position == 3 %}🥉
+                    {% endif %}
+                </div>
+                <img src="{{ winner.user.avatar }}" class="w-10 h-10 rounded-full">
+                <div>
+                    <div class="font-bold text-white">{{ winner.user.username }}</div>
+                    <div class="text-xs text-mk-text-secondary">
+                        {% if winner.position == 1 %}Champion
+                        {% elif winner.position == 2 %}Runner-up
+                        {% else %}3rd Place
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </div>

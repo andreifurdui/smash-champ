@@ -423,3 +423,237 @@ def calculate_standings(tournament_id: int) -> list[dict]:
         standing['position'] = i + 1
 
     return standings
+
+
+def start_playoffs(tournament_id: int) -> Tournament:
+    """
+    Start playoff phase - generate Gauntlet bracket from group standings.
+
+    Args:
+        tournament_id: Tournament ID
+
+    Returns:
+        Updated Tournament object
+
+    Raises:
+        TournamentError: If validation fails
+    """
+    from datetime import datetime
+    from app.models import TournamentWinner
+
+    tournament = Tournament.query.get_or_404(tournament_id)
+
+    # Validate tournament status
+    if tournament.status != TournamentStatus.GROUP_STAGE:
+        raise TournamentError(f'Cannot start playoffs from {tournament.status.value} status')
+
+    # Validate all group matches are confirmed
+    pending_matches = Match.query.filter_by(
+        tournament_id=tournament_id,
+        phase=MatchPhase.GROUP.value
+    ).filter(
+        Match.status.in_([MatchStatus.SCHEDULED.value, MatchStatus.PENDING_CONFIRMATION.value])
+    ).count()
+
+    if pending_matches > 0:
+        raise TournamentError(f'Cannot start playoffs: {pending_matches} group matches still pending')
+
+    # Calculate final standings
+    standings = calculate_standings(tournament_id)
+
+    if len(standings) < 2:
+        raise TournamentError('Need at least 2 players for playoffs')
+
+    # Update Registration records with seeds and positions
+    for standing in standings:
+        reg = Registration.query.filter_by(
+            tournament_id=tournament_id,
+            user_id=standing['user'].id
+        ).first()
+        reg.seed = standing['position']
+        reg.group_position = standing['position']
+
+    # Generate Gauntlet bracket
+    # Gauntlet: Last place (#n) vs second-to-last (#n-1), winner challenges up
+    # Total matches: n - 1
+
+    # Reverse standings (start from bottom)
+    seeded_players = [s['user'].id for s in standings]
+    seeded_players.reverse()  # Now: [#4, #3, #2, #1] for 4 players
+
+    # Create first match: #4 vs #3 (last vs second-to-last)
+    first_match = Match(
+        tournament_id=tournament_id,
+        player1_id=seeded_players[0],  # Last place
+        player2_id=seeded_players[1],  # Second-to-last
+        phase=MatchPhase.PLAYOFF,
+        status=MatchStatus.SCHEDULED,
+        bracket_round=1,
+        bracket_position=1
+    )
+    db.session.add(first_match)
+
+    # Update tournament status
+    tournament.status = TournamentStatus.PLAYOFFS
+
+    db.session.commit()
+    return tournament
+
+
+def advance_playoff_winner(match_id: int) -> None:
+    """
+    Handle playoff winner advancement - create next match if not final.
+
+    Called automatically after match confirmation for PLAYOFF matches.
+
+    Args:
+        match_id: ID of confirmed playoff match
+
+    Raises:
+        TournamentError: If match not playoff or not confirmed
+    """
+    from datetime import datetime
+
+    match = Match.query.get_or_404(match_id)
+
+    # Validate this is a confirmed playoff match
+    if match.phase != MatchPhase.PLAYOFF:
+        return  # Not a playoff match, nothing to do
+
+    if match.status != MatchStatus.CONFIRMED:
+        raise TournamentError('Match must be confirmed to advance winner')
+
+    if not match.winner_id:
+        raise TournamentError('Match must have a winner')
+
+    # Get all registrations (ordered by seed)
+    registrations = Registration.query.filter_by(
+        tournament_id=match.tournament_id
+    ).order_by(Registration.seed.asc()).all()
+
+    seeded_player_ids = [r.user_id for r in registrations]
+    total_players = len(seeded_player_ids)
+
+    # Determine next opponent
+    # Gauntlet logic: Winner challenges next higher seed
+    current_round = match.bracket_round
+    next_round = current_round + 1
+
+    # Check if this was the final match
+    if next_round > total_players - 1:
+        # This was the championship match - tournament complete
+        complete_tournament(match.tournament_id)
+        return
+
+    # Get next opponent (next seed in line)
+    # seeded_player_ids is [#1, #2, #3, #4] (highest to lowest seed)
+    # Reverse for gauntlet: [#4, #3, #2, #1]
+    gauntlet_order = list(reversed(seeded_player_ids))
+    next_opponent_id = gauntlet_order[next_round]  # next_round is 0-indexed position
+
+    # Create next playoff match
+    next_match = Match(
+        tournament_id=match.tournament_id,
+        player1_id=match.winner_id,  # Winner advances
+        player2_id=next_opponent_id,  # Next challenger
+        phase=MatchPhase.PLAYOFF,
+        status=MatchStatus.SCHEDULED,
+        bracket_round=next_round,
+        bracket_position=1
+    )
+    db.session.add(next_match)
+    db.session.commit()
+
+
+def complete_tournament(tournament_id: int) -> Tournament:
+    """
+    Complete tournament - record final positions, update TournamentWinner.
+
+    Args:
+        tournament_id: Tournament ID
+
+    Returns:
+        Updated Tournament object
+
+    Raises:
+        TournamentError: If validation fails
+    """
+    from datetime import datetime
+    from app.models import TournamentWinner
+
+    tournament = Tournament.query.get_or_404(tournament_id)
+
+    # Validate tournament status
+    if tournament.status != TournamentStatus.PLAYOFFS:
+        raise TournamentError(f'Cannot complete tournament from {tournament.status.value} status')
+
+    # Get final playoff match (championship)
+    final_match = Match.query.filter_by(
+        tournament_id=tournament_id,
+        phase=MatchPhase.PLAYOFF.value
+    ).order_by(Match.bracket_round.desc()).first()
+
+    if not final_match or not final_match.winner_id:
+        raise TournamentError('Championship match must be confirmed to complete tournament')
+
+    # Get all playoff matches (for position calculation)
+    playoff_matches = Match.query.filter_by(
+        tournament_id=tournament_id,
+        phase=MatchPhase.PLAYOFF.value,
+        status=MatchStatus.CONFIRMED.value
+    ).order_by(Match.bracket_round.desc()).all()
+
+    # Determine final positions (Gauntlet logic)
+    # 1st place: Winner of final match (champion)
+    # 2nd place: Loser of final match
+    # 3rd+ place: Order by elimination round (later = better)
+
+    champion_id = final_match.winner_id
+    runner_up_id = final_match.player1_id if final_match.player2_id == champion_id else final_match.player2_id
+
+    # Build position map
+    position_map = {
+        champion_id: 1,
+        runner_up_id: 2
+    }
+
+    # Assign remaining positions based on elimination round (reverse bracket_round)
+    # Higher bracket_round = eliminated later = better position
+    eliminated_players = []
+    for match in playoff_matches:
+        loser_id = match.player1_id if match.winner_id == match.player2_id else match.player2_id
+        if loser_id not in position_map:
+            eliminated_players.append((loser_id, match.bracket_round))
+
+    # Sort by bracket_round descending (eliminated later = better)
+    eliminated_players.sort(key=lambda x: x[1], reverse=True)
+
+    current_position = 3
+    for player_id, _ in eliminated_players:
+        position_map[player_id] = current_position
+        current_position += 1
+
+    # Update Registration records with final positions
+    for user_id, position in position_map.items():
+        reg = Registration.query.filter_by(
+            tournament_id=tournament_id,
+            user_id=user_id
+        ).first()
+        if reg:
+            reg.final_position = position
+
+    # Create TournamentWinner records
+    for user_id, position in position_map.items():
+        winner_record = TournamentWinner(
+            tournament_id=tournament_id,
+            user_id=user_id,
+            position=position,
+            awarded_at=datetime.utcnow()
+        )
+        db.session.add(winner_record)
+
+    # Update tournament status
+    tournament.status = TournamentStatus.COMPLETED
+
+    db.session.commit()
+    return tournament

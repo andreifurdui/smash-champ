@@ -102,11 +102,11 @@ Routes are thin - business logic lives in `services/`. Templates extend `base.ht
 | 3 | User tournament registration, standings | ✅ Complete |
 | 4 | Dashboard with VS cards | ✅ Complete |
 | 5 | Score submission + confirmation flow | ✅ Complete |
-| 6 | Gauntlet playoff bracket generation | 🔜 Next |
-| 7 | Statistics pages | Planned |
+| 6 | Gauntlet playoff bracket generation | ✅ Complete |
+| 7 | Statistics pages | 🔜 Next |
 | 8 | Polish + deployment | Planned |
 
-**Current Status**: Phase 5 complete. Players can submit match scores with table tennis validation (best of 3, first to 11, win by 2). Opponents receive pending confirmations with confirm/dispute options. Statistics (group points, sets, points) update automatically on confirmation. Ready for Phase 6.
+**Current Status**: Phase 6 complete. Full Gauntlet playoff system implemented with automatic bracket generation, winner advancement, and tournament completion. Admin can start playoffs when group stage finishes. Winners automatically advance to challenge next higher seed. Final positions recorded in TournamentWinner table. Bracket visualization available for both admins and users. Ready for Phase 7.
 
 ## Coding Guidelines
 

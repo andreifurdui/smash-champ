@@ -247,6 +247,12 @@ def confirm_match_score(match_id: int, user_id: int) -> Match:
     _update_match_statistics(match)
 
     db.session.commit()
+
+    # If this is a playoff match, advance winner
+    if match.phase == MatchPhase.PLAYOFF.value:
+        from app.services.tournament import advance_playoff_winner
+        advance_playoff_winner(match.id)
+
     return match
 
 

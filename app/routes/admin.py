@@ -10,6 +10,8 @@ from app.services.tournament import (
     create_tournament,
     get_tournament_with_players,
     start_group_stage,
+    start_playoffs,
+    complete_tournament as complete_tournament_service,
     cancel_tournament,
     get_tournament_matches,
     TournamentError
@@ -137,6 +139,57 @@ def tournament_cancel(tournament_id):
     try:
         cancel_tournament(tournament_id)
         flash('Tournament cancelled successfully.', 'warning')
+    except TournamentError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+
+    return redirect(url_for('admin.tournament_detail', tournament_id=tournament_id))
+
+
+@bp.route('/tournament/<int:tournament_id>/start-playoffs', methods=['POST'])
+@admin_required
+def tournament_start_playoffs(tournament_id):
+    """
+    Start playoff phase.
+
+    Validates:
+    - Tournament exists
+    - Tournament in GROUP_STAGE status
+    - All group matches are confirmed
+    - At least 2 players
+
+    On success: Creates first Gauntlet playoff match
+    """
+    try:
+        tournament = start_playoffs(tournament_id)
+        flash(f'Playoffs started for {tournament.name}! Gauntlet bracket generated.', 'success')
+    except TournamentError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+
+    return redirect(url_for('admin.tournament_detail', tournament_id=tournament_id))
+
+
+@bp.route('/tournament/<int:tournament_id>/complete', methods=['POST'])
+@admin_required
+def tournament_complete(tournament_id):
+    """
+    Complete tournament (manual trigger if needed).
+
+    Validates:
+    - Tournament exists
+    - Tournament in PLAYOFFS status
+    - Championship match is confirmed
+
+    On success: Records final positions and creates TournamentWinner records
+    """
+    try:
+        tournament = complete_tournament_service(tournament_id)
+        flash(f'Tournament {tournament.name} completed! Final standings recorded.', 'success')
     except TournamentError as e:
         flash(str(e), 'error')
     except Exception as e:
