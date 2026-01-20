@@ -60,9 +60,7 @@ def get_tournament_with_players(tournament_id: int) -> Optional[Tournament]:
     Returns:
         Tournament object with registrations loaded, or None if not found
     """
-    return Tournament.query.options(
-        db.joinedload(Tournament.registrations).joinedload(Registration.user)
-    ).get(tournament_id)
+    return Tournament.query.get(tournament_id)
 
 
 def start_group_stage(tournament_id: int) -> int:
