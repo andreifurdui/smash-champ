@@ -344,40 +344,42 @@
             <div class="space-y-3">
                 {% for match in upcoming_matches %}
                 {% set opponent = match.get_opponent(current_user.id) %}
-                <div class="bg-gradient-to-r from-mk-darkest to-mk-darker border {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} rounded-lg p-4 hover:border-mk-fire transition-colors">
+                <div class="bg-gradient-to-r from-mk-darkest to-mk-darker border {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} rounded-lg p-5 hover:border-mk-fire transition-colors">
+                    <!-- Row 1: Opponent Info -->
                     <div class="flex items-center gap-4">
                         <!-- Opponent Avatar -->
                         <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
-                             class="w-14 h-14 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} flex-shrink-0">
+                             class="w-16 h-16 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} flex-shrink-0">
 
                         <!-- Opponent Info -->
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">{{ opponent.username }}</span>
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="font-bold text-lg">{{ current_user.username }}</span>
                                 <span class="px-2 py-0.5 bg-mk-fire text-mk-dark font-black text-xs rounded">VS</span>
+                                <span class="font-bold text-lg">{{ opponent.username }}</span>
                                 {% if loop.first %}
-                                <span class="text-xs text-mk-fire">Recommended</span>
+                                <span class="text-xs text-mk-fire ml-1">Recommended</span>
                                 {% endif %}
                             </div>
-                            <div class="text-xs text-mk-text-secondary truncate">"{{ opponent.tagline }}"</div>
+                            <div class="text-xs text-mk-text-secondary">"{{ opponent.tagline }}"</div>
                             <div class="text-xs text-mk-text-secondary mt-1">
                                 {{ match.tournament.name }} · <span class="text-mk-fire">{{ match.phase|upper }}</span>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Action Buttons -->
-                        <div class="flex gap-2 flex-shrink-0">
-                            <a href="{{ url_for('match.submit', match_id=match.id) }}"
-                               class="px-4 py-2 {% if loop.first %}bg-mk-fire hover:bg-mk-fire-light text-mk-dark{% else %}bg-mk-darkest hover:bg-mk-fire text-white hover:text-mk-dark{% endif %} font-bold rounded transition-colors">
-                                Submit Score
-                            </a>
-                            <form method="POST" action="{{ url_for('match.forfeit', match_id=match.id) }}"
-                                  onsubmit="return confirm('Are you sure you want to forfeit this match? Your opponent will win by walkover.');">
-                                <button type="submit" class="px-3 py-2 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors text-sm">
-                                    Forfeit
-                                </button>
-                            </form>
-                        </div>
+                    <!-- Row 2: Action Buttons -->
+                    <div class="flex gap-3 mt-4 pt-4 border-t border-mk-darkest">
+                        <a href="{{ url_for('match.submit', match_id=match.id) }}"
+                           class="flex-1 text-center px-4 py-2 {% if loop.first %}bg-mk-fire hover:bg-mk-fire-light text-mk-dark{% else %}bg-mk-darkest hover:bg-mk-fire text-white hover:text-mk-dark{% endif %} font-bold rounded transition-colors">
+                            Submit Score
+                        </a>
+                        <form method="POST" action="{{ url_for('match.forfeit', match_id=match.id) }}"
+                              onsubmit="return confirm('Are you sure you want to forfeit this match? Your opponent will win by walkover.');">
+                            <button type="submit" class="px-4 py-2 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                                Forfeit
+                            </button>
+                        </form>
                     </div>
                 </div>
                 {% endfor %}
