@@ -259,6 +259,8 @@
                             <span class="text-green-500">✓ Confirmed</span>
                             {% elif match.status == 'disputed' %}
                             <span class="text-red-500">⚠️ Disputed</span>
+                            {% elif match.status == 'walkover' %}
+                            <span class="text-purple-500">🚫 Walkover - {{ match.winner.username }} wins</span>
                             {% endif %}
                         </div>
                     </div>

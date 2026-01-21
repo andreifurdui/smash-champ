@@ -4,8 +4,9 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user
 
 from app.extensions import db
-from app.models import Tournament, TournamentStatus, MatchPhase
+from app.models import Tournament, TournamentStatus, MatchPhase, Match
 from app.forms.tournament import TournamentCreateForm
+from app.services.match import forfeit_match
 from app.services.tournament import (
     create_tournament,
     get_tournament_with_players,
@@ -198,3 +199,25 @@ def tournament_complete(tournament_id):
         flash(f'An error occurred: {str(e)}', 'error')
 
     return redirect(url_for('admin.tournament_detail', tournament_id=tournament_id))
+
+
+@bp.route('/match/<int:match_id>/forfeit/<int:forfeiting_user_id>', methods=['POST'])
+@admin_required
+def match_forfeit(match_id, forfeiting_user_id):
+    """
+    Admin action: Forfeit a match on behalf of a player.
+
+    The forfeiting player loses by walkover, opponent wins.
+    """
+    match = Match.query.get_or_404(match_id)
+
+    try:
+        forfeit_match(match_id, forfeiting_user_id, admin_override=True)
+        flash('Match forfeited. Winner awarded by walkover.', 'success')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+
+    return redirect(url_for('admin.tournament_detail', tournament_id=match.tournament_id))

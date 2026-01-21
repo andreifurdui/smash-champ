@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.forms.match import ScoreSubmissionForm
-from app.services.match import submit_match_score, confirm_match_score, dispute_match_score
+from app.services.match import submit_match_score, confirm_match_score, dispute_match_score, forfeit_match
 from app.models import Match
 from app.extensions import db
 
@@ -101,6 +101,22 @@ def dispute(match_id):
     try:
         dispute_match_score(match_id, current_user.id)
         flash('Score disputed. Admin will review this match.', 'warning')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+
+    return redirect(url_for('main.dashboard'))
+
+
+@bp.route('/<int:match_id>/forfeit', methods=['POST'])
+@login_required
+def forfeit(match_id):
+    """Forfeit a match (self-forfeit by current user)."""
+    try:
+        forfeit_match(match_id, current_user.id)
+        flash('Match forfeited. Your opponent wins by walkover.', 'warning')
     except ValueError as e:
         flash(str(e), 'error')
     except Exception as e:

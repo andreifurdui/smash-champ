@@ -57,7 +57,7 @@ def get_user_upcoming_matches(user_id: int, limit: int = 3) -> List[Match]:
 
 def get_user_recent_matches(user_id: int, limit: int = 5) -> List[Match]:
     """
-    Get user's most recent confirmed matches.
+    Get user's most recent confirmed or walkover matches.
 
     Args:
         user_id: User ID
@@ -68,7 +68,7 @@ def get_user_recent_matches(user_id: int, limit: int = 5) -> List[Match]:
     """
     return Match.query.filter(
         or_(Match.player1_id == user_id, Match.player2_id == user_id),
-        Match.status == MatchStatus.CONFIRMED.value,
+        Match.status.in_([MatchStatus.CONFIRMED.value, MatchStatus.WALKOVER.value]),
         Match.winner_id.isnot(None)
     ).options(
         db.joinedload(Match.player1),
@@ -104,7 +104,7 @@ def get_user_pending_confirmations(user_id: int) -> List[Match]:
 
 def get_global_recent_matches(limit: int = 10) -> List[Match]:
     """
-    Get most recent confirmed matches across all users.
+    Get most recent confirmed or walkover matches across all users.
 
     Args:
         limit: Number of matches to return (default 10)
@@ -113,7 +113,7 @@ def get_global_recent_matches(limit: int = 10) -> List[Match]:
         List of Match objects with results
     """
     return Match.query.filter(
-        Match.status == MatchStatus.CONFIRMED.value,
+        Match.status.in_([MatchStatus.CONFIRMED.value, MatchStatus.WALKOVER.value]),
         Match.winner_id.isnot(None)
     ).options(
         db.joinedload(Match.player1),
@@ -132,16 +132,16 @@ def get_user_stats(user_id: int) -> dict:
     Returns:
         Dictionary with wins, losses, total, win_rate
     """
-    # Count wins
+    # Count wins (confirmed and walkover)
     wins = Match.query.filter(
         Match.winner_id == user_id,
-        Match.status == MatchStatus.CONFIRMED.value
+        Match.status.in_([MatchStatus.CONFIRMED.value, MatchStatus.WALKOVER.value])
     ).count()
 
-    # Count losses (played and confirmed but didn't win)
+    # Count losses (played and confirmed/walkover but didn't win)
     losses = Match.query.filter(
         or_(Match.player1_id == user_id, Match.player2_id == user_id),
-        Match.status == MatchStatus.CONFIRMED.value,
+        Match.status.in_([MatchStatus.CONFIRMED.value, MatchStatus.WALKOVER.value]),
         Match.winner_id.isnot(None),
         Match.winner_id != user_id
     ).count()
@@ -390,3 +390,89 @@ def _update_match_statistics(match: Match) -> None:
     else:
         reg1.group_points += 1
         reg2.group_points += 2
+
+
+def forfeit_match(match_id: int, forfeiting_user_id: int, admin_override: bool = False) -> Match:
+    """
+    Forfeit a match. The forfeiting player loses, opponent wins by walkover.
+
+    Args:
+        match_id: Match ID
+        forfeiting_user_id: User ID of player forfeiting
+        admin_override: If True, skip participant validation (admin action)
+
+    Returns:
+        Updated Match object
+
+    Raises:
+        ValueError: If validation fails
+    """
+    from datetime import datetime
+
+    match = Match.query.get_or_404(match_id)
+
+    # Validate match status
+    if match.status != MatchStatus.SCHEDULED.value:
+        raise ValueError(f'Cannot forfeit match in {match.status} status')
+
+    # Validate forfeiting user is participant (unless admin override)
+    if not admin_override:
+        if forfeiting_user_id not in (match.player1_id, match.player2_id):
+            raise ValueError('You are not a participant in this match')
+
+    # Ensure forfeiting user is actually a participant even with admin override
+    if forfeiting_user_id not in (match.player1_id, match.player2_id):
+        raise ValueError('Forfeiting user must be a match participant')
+
+    # Determine winner (opponent of forfeiting player)
+    if forfeiting_user_id == match.player1_id:
+        match.winner_id = match.player2_id
+    else:
+        match.winner_id = match.player1_id
+
+    # Update match status to walkover
+    match.status = MatchStatus.WALKOVER.value
+    match.played_at = datetime.utcnow()
+
+    # Update statistics (winner +2, loser +0, no sets/points)
+    _update_walkover_statistics(match, forfeiting_user_id)
+
+    db.session.commit()
+
+    # If this is a playoff match, advance winner
+    if match.phase == MatchPhase.PLAYOFF.value:
+        from app.services.tournament import advance_playoff_winner
+        advance_playoff_winner(match.id)
+
+    return match
+
+
+def _update_walkover_statistics(match: Match, forfeiting_user_id: int) -> None:
+    """
+    Update Registration statistics after walkover.
+    Winner gets +2 points, loser gets +0 points.
+    No sets or points are counted (no game played).
+
+    Args:
+        match: Match object with winner_id set
+        forfeiting_user_id: User ID of the player who forfeited
+    """
+    from app.models import Registration
+
+    # Get registrations for both players
+    winner_reg = Registration.query.filter_by(
+        user_id=match.winner_id,
+        tournament_id=match.tournament_id
+    ).first()
+
+    loser_reg = Registration.query.filter_by(
+        user_id=forfeiting_user_id,
+        tournament_id=match.tournament_id
+    ).first()
+
+    if not winner_reg or not loser_reg:
+        raise ValueError('Registration records not found for match participants')
+
+    # Winner gets +2 points, loser gets +0 points (harsher than loss where loser gets +1)
+    winner_reg.group_points += 2
+    # loser gets 0 points (no addition needed)

@@ -415,11 +415,11 @@ def calculate_standings(tournament_id: int) -> list[dict]:
         db.joinedload(Registration.user)
     ).all()
 
-    # 2. Get confirmed GROUP matches
+    # 2. Get confirmed and walkover GROUP matches
     confirmed_matches = Match.query.filter(
         Match.tournament_id == tournament_id,
         Match.phase == MatchPhase.GROUP.value,
-        Match.status == MatchStatus.CONFIRMED.value,
+        Match.status.in_([MatchStatus.CONFIRMED.value, MatchStatus.WALKOVER.value]),
         Match.winner_id.isnot(None)
     ).all()
 
@@ -497,12 +497,12 @@ def start_playoffs(tournament_id: int) -> Tournament:
     if tournament.status != TournamentStatus.GROUP_STAGE:
         raise TournamentError(f'Cannot start playoffs from {tournament.status.value} status')
 
-    # Validate all group matches are confirmed
+    # Validate all group matches are confirmed or walkover
     pending_matches = Match.query.filter_by(
         tournament_id=tournament_id,
         phase=MatchPhase.GROUP.value
     ).filter(
-        Match.status.in_([MatchStatus.SCHEDULED.value, MatchStatus.PENDING_CONFIRMATION.value])
+        Match.status.in_([MatchStatus.SCHEDULED.value, MatchStatus.PENDING_CONFIRMATION.value, MatchStatus.DISPUTED.value])
     ).count()
 
     if pending_matches > 0:
@@ -566,12 +566,12 @@ def advance_playoff_winner(match_id: int) -> None:
 
     match = Match.query.get_or_404(match_id)
 
-    # Validate this is a confirmed playoff match
+    # Validate this is a confirmed or walkover playoff match
     if match.phase != MatchPhase.PLAYOFF:
         return  # Not a playoff match, nothing to do
 
-    if match.status != MatchStatus.CONFIRMED:
-        raise TournamentError('Match must be confirmed to advance winner')
+    if match.status not in [MatchStatus.CONFIRMED, MatchStatus.WALKOVER]:
+        raise TournamentError('Match must be confirmed or walkover to advance winner')
 
     if not match.winner_id:
         raise TournamentError('Match must have a winner')
@@ -646,11 +646,11 @@ def complete_tournament(tournament_id: int) -> Tournament:
     if not final_match or not final_match.winner_id:
         raise TournamentError('Championship match must be confirmed to complete tournament')
 
-    # Get all playoff matches (for position calculation)
-    playoff_matches = Match.query.filter_by(
-        tournament_id=tournament_id,
-        phase=MatchPhase.PLAYOFF.value,
-        status=MatchStatus.CONFIRMED.value
+    # Get all playoff matches (for position calculation) - include walkovers
+    playoff_matches = Match.query.filter(
+        Match.tournament_id == tournament_id,
+        Match.phase == MatchPhase.PLAYOFF.value,
+        Match.status.in_([MatchStatus.CONFIRMED.value, MatchStatus.WALKOVER.value])
     ).order_by(Match.bracket_round.desc()).all()
 
     # Determine final positions (Gauntlet logic)

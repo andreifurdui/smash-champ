@@ -173,8 +173,28 @@
                     <span class="text-xs text-green-500">Confirmed</span>
                     {% elif match.status == 'disputed' %}
                     <span class="text-xs text-red-500">Disputed</span>
+                    {% elif match.status == 'walkover' %}
+                    <span class="text-xs text-purple-500">Walkover - {{ match.winner.username }} wins</span>
                     {% endif %}
                 </div>
+
+                <!-- Admin Forfeit Buttons (only for scheduled matches) -->
+                {% if match.status == 'scheduled' %}
+                <div class="mt-3 flex gap-2 justify-center">
+                    <form method="POST" action="{{ url_for('admin.match_forfeit', match_id=match.id, forfeiting_user_id=match.player1_id) }}"
+                          onsubmit="return confirm('Forfeit this match on behalf of {{ match.player1.username }}? {{ match.player2.username }} will win by walkover.');">
+                        <button type="submit" class="text-xs px-2 py-1 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                            {{ match.player1.username }} Forfeits
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.match_forfeit', match_id=match.id, forfeiting_user_id=match.player2_id) }}"
+                          onsubmit="return confirm('Forfeit this match on behalf of {{ match.player2.username }}? {{ match.player1.username }} will win by walkover.');">
+                        <button type="submit" class="text-xs px-2 py-1 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                            {{ match.player2.username }} Forfeits
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -183,7 +203,7 @@
 
     <!-- Group Stage Complete / Start Playoffs -->
     {% if tournament.status == 'group_stage' %}
-        {% set pending_count = tournament.matches|selectattr('phase', 'equalto', 'group')|selectattr('status', 'in', ['scheduled', 'pending_confirmation'])|list|length %}
+        {% set pending_count = tournament.matches|selectattr('phase', 'equalto', 'group')|selectattr('status', 'in', ['scheduled', 'pending_confirmation', 'disputed'])|list|length %}
 
         {% if pending_count == 0 %}
         <div class="mt-6 p-4 bg-green-500 bg-opacity-10 border border-green-500 rounded-lg">
@@ -269,6 +289,9 @@
                         {% if match.status == 'confirmed' %}
                             <div class="text-green-500 font-bold">✓ Confirmed</div>
                             <div class="text-sm text-mk-text-secondary">Winner: {{ match.winner.username }}</div>
+                        {% elif match.status == 'walkover' %}
+                            <div class="text-purple-500 font-bold">🚫 Walkover</div>
+                            <div class="text-sm text-mk-text-secondary">Winner: {{ match.winner.username }}</div>
                         {% elif match.status == 'pending_confirmation' %}
                             <div class="text-yellow-500 font-bold">⏳ Pending</div>
                         {% else %}
@@ -285,6 +308,24 @@
                         Set {{ set_score.set_number }}: {{ set_score.player1_score }}-{{ set_score.player2_score }}
                     </span>
                     {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Admin Forfeit Buttons for Playoff (only for scheduled matches) -->
+                {% if match.status == 'scheduled' %}
+                <div class="mt-3 flex gap-2 justify-center">
+                    <form method="POST" action="{{ url_for('admin.match_forfeit', match_id=match.id, forfeiting_user_id=match.player1_id) }}"
+                          onsubmit="return confirm('Forfeit this playoff match on behalf of {{ match.player1.username }}? {{ match.player2.username }} will win by walkover and advance.');">
+                        <button type="submit" class="text-xs px-2 py-1 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                            {{ match.player1.username }} Forfeits
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.match_forfeit', match_id=match.id, forfeiting_user_id=match.player2_id) }}"
+                          onsubmit="return confirm('Forfeit this playoff match on behalf of {{ match.player2.username }}? {{ match.player1.username }} will win by walkover and advance.');">
+                        <button type="submit" class="text-xs px-2 py-1 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                            {{ match.player2.username }} Forfeits
+                        </button>
+                    </form>
                 </div>
                 {% endif %}
             </div>
