@@ -212,6 +212,13 @@ def cancel_tournament(tournament_id: int) -> None:
         raise TournamentError("Cannot cancel a completed tournament")
 
     tournament.status = TournamentStatus.CANCELLED
+
+    # Cancel all scheduled matches for this tournament
+    Match.query.filter(
+        Match.tournament_id == tournament_id,
+        Match.status == MatchStatus.SCHEDULED.value
+    ).update({'status': MatchStatus.CANCELLED.value})
+
     db.session.commit()
 
 
