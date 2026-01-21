@@ -17,6 +17,10 @@
             <div>
                 <div class="flex items-center gap-3 mb-2">
                     <h1 class="text-4xl font-bold text-mk-fire">{{ tournament.name }}</h1>
+                    <a href="{{ url_for('admin.tournament_edit', tournament_id=tournament.id) }}"
+                       class="text-xs px-2 py-1 bg-blue-500 bg-opacity-20 border border-blue-500 text-blue-500 rounded hover:bg-opacity-40 transition-colors">
+                        Edit
+                    </a>
                     {% if tournament.status == 'registration' %}
                     <span class="inline-block bg-yellow-500 bg-opacity-20 border border-yellow-500 text-yellow-500 text-xs font-bold px-3 py-1 rounded">
                         REGISTRATION OPEN
@@ -89,7 +93,34 @@
 
     <!-- Registered Players -->
     <div class="card mb-6">
-        <h2 class="text-2xl font-bold mb-4 text-mk-fire">Registered Players</h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-mk-fire">Registered Players</h2>
+
+            <!-- Add Player (Registration Phase Only) -->
+            {% if tournament.status == 'registration' and unregistered_users %}
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" type="button"
+                        class="text-sm px-3 py-1 bg-green-500 bg-opacity-20 border border-green-500 text-green-500 rounded hover:bg-opacity-40 transition-colors flex items-center gap-1">
+                    Add Player
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="open" @click.away="open = false"
+                     class="absolute right-0 mt-2 w-64 bg-mk-darker border border-mk-darkest rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                    {% for user in unregistered_users %}
+                    <form method="POST" action="{{ url_for('admin.tournament_add_player', tournament_id=tournament.id, user_id=user.id) }}">
+                        <button type="submit"
+                                class="w-full px-4 py-2 text-left hover:bg-mk-darkest transition-colors flex items-center gap-2">
+                            <img src="{{ user.avatar }}" alt="{{ user.username }}" class="w-6 h-6 rounded-full">
+                            <span class="truncate">{{ user.username }}</span>
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
 
         {% if players %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -108,6 +139,16 @@
                         ADMIN
                     </span>
                     {% endif %}
+                    <!-- Remove Button (Registration Phase Only) -->
+                    {% if tournament.status == 'registration' %}
+                    <form method="POST" action="{{ url_for('admin.tournament_remove_player', tournament_id=tournament.id, user_id=player.id) }}"
+                          onsubmit="return confirm('Remove {{ player.username }} from this tournament?');">
+                        <button type="submit"
+                                class="text-xs px-2 py-1 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                            Remove
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -115,7 +156,7 @@
         {% else %}
         <div class="text-center py-8 text-mk-text-secondary">
             <p class="text-lg">No players registered yet</p>
-            <p class="text-sm mt-2">User registration will be available in Phase 3</p>
+            <p class="text-sm mt-2">Add players using the button above or wait for users to register themselves</p>
         </div>
         {% endif %}
 

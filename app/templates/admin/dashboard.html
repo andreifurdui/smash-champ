@@ -10,9 +10,14 @@
             <h1 class="text-4xl font-bold text-mk-fire mb-2">Admin Dashboard</h1>
             <p class="text-mk-text-secondary">Manage tournaments and championships</p>
         </div>
-        <a href="{{ url_for('admin.tournament_create') }}" class="btn-primary">
-            Create New Tournament
-        </a>
+        <div class="flex gap-3">
+            <a href="{{ url_for('admin.users') }}" class="btn-secondary">
+                Manage Users
+            </a>
+            <a href="{{ url_for('admin.tournament_create') }}" class="btn-primary">
+                Create New Tournament
+            </a>
+        </div>
     </div>
 
     <!-- Tournaments List -->

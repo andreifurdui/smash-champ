@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Admin - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin.dashboard') }}" class="text-mk-text-secondary hover:text-mk-fire transition-colors">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold text-mk-fire mb-2">Manage Users</h1>
+            <p class="text-mk-text-secondary">{{ users|length }} registered user{% if users|length != 1 %}s{% endif %}</p>
+        </div>
+    </div>
+
+    <!-- Users List -->
+    {% if users %}
+    <div class="card">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-mk-darkest text-left">
+                        <th class="pb-3 text-mk-text-secondary font-medium">User</th>
+                        <th class="pb-3 text-mk-text-secondary font-medium">Email</th>
+                        <th class="pb-3 text-mk-text-secondary font-medium">Role</th>
+                        <th class="pb-3 text-mk-text-secondary font-medium">Joined</th>
+                        <th class="pb-3 text-mk-text-secondary font-medium text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-mk-darkest">
+                    {% for user in users %}
+                    <tr class="hover:bg-mk-darker transition-colors">
+                        <!-- User Info -->
+                        <td class="py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="{{ user.avatar }}" alt="{{ user.username }}" class="avatar-small">
+                                <div>
+                                    <div class="font-bold">{{ user.username }}</div>
+                                    <div class="text-xs text-mk-text-secondary italic truncate max-w-xs">
+                                        "{{ user.tagline }}"
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Email -->
+                        <td class="py-4 text-sm">{{ user.email }}</td>
+
+                        <!-- Role Badge -->
+                        <td class="py-4">
+                            {% if user.is_admin %}
+                            <span class="inline-block bg-mk-fire text-mk-dark text-xs font-bold px-2 py-1 rounded">
+                                ADMIN
+                            </span>
+                            {% else %}
+                            <span class="inline-block bg-mk-darker text-mk-text-secondary text-xs font-bold px-2 py-1 rounded border border-mk-darkest">
+                                USER
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Joined Date -->
+                        <td class="py-4 text-sm text-mk-text-secondary">
+                            {{ user.created_at.strftime('%b %d, %Y') }}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="py-4">
+                            <div class="flex gap-2 justify-end flex-wrap">
+                                <!-- Edit -->
+                                <a href="{{ url_for('admin.user_edit', user_id=user.id) }}"
+                                   class="text-xs px-2 py-1 bg-blue-500 bg-opacity-20 border border-blue-500 text-blue-500 rounded hover:bg-opacity-40 transition-colors">
+                                    Edit
+                                </a>
+
+                                <!-- Toggle Admin -->
+                                {% if user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('admin.user_toggle_admin', user_id=user.id) }}"
+                                      onsubmit="return confirm('{% if user.is_admin %}Demote {{ user.username }} from admin?{% else %}Promote {{ user.username }} to admin?{% endif %}');">
+                                    <button type="submit"
+                                            class="text-xs px-2 py-1 bg-yellow-500 bg-opacity-20 border border-yellow-500 text-yellow-500 rounded hover:bg-opacity-40 transition-colors">
+                                        {% if user.is_admin %}Demote{% else %}Promote{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Reset Password -->
+                                <form method="POST" action="{{ url_for('admin.user_reset_password', user_id=user.id) }}"
+                                      onsubmit="return confirm('Reset password for {{ user.username }}? A new temporary password will be generated.');">
+                                    <button type="submit"
+                                            class="text-xs px-2 py-1 bg-purple-500 bg-opacity-20 border border-purple-500 text-purple-500 rounded hover:bg-opacity-40 transition-colors">
+                                        Reset PW
+                                    </button>
+                                </form>
+
+                                <!-- Delete -->
+                                {% if user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('admin.user_delete', user_id=user.id) }}"
+                                      onsubmit="return confirm('Delete user {{ user.username }}? This cannot be undone.');">
+                                    <button type="submit"
+                                            class="text-xs px-2 py-1 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded hover:bg-opacity-40 transition-colors">
+                                        Delete
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card text-center py-12">
+        <h3 class="text-2xl font-bold mb-2">No Users Found</h3>
+        <p class="text-mk-text-secondary">
+            There are no registered users in the system.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

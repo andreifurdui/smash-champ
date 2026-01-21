@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - Admin - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin.users') }}" class="text-mk-text-secondary hover:text-mk-fire transition-colors">
+            ← Back to Users
+        </a>
+    </div>
+
+    <div class="card">
+        <!-- Header with Avatar -->
+        <div class="flex items-center gap-4 mb-6">
+            <img src="{{ user.avatar }}" alt="{{ user.username }}" class="w-16 h-16 rounded-full">
+            <div>
+                <h2 class="text-3xl font-bold text-mk-fire">Edit User</h2>
+                <p class="text-mk-text-secondary">Editing profile for {{ user.username }}</p>
+            </div>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            <!-- Username -->
+            <div>
+                <label for="username" class="block text-sm font-medium mb-1">{{ form.username.label }}</label>
+                {{ form.username(class="input-field", placeholder="Username") }}
+                {% if form.username.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.username.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium mb-1">{{ form.email.label }}</label>
+                {{ form.email(class="input-field", placeholder="email@example.com") }}
+                {% if form.email.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.email.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tagline -->
+            <div>
+                <label for="tagline" class="block text-sm font-medium mb-1">{{ form.tagline.label }}</label>
+                {{ form.tagline(class="input-field", rows="2", placeholder="Enter a tagline... (optional)", maxlength="100", id="tagline-input") }}
+                <div class="flex justify-between text-sm text-mk-text-secondary mt-1">
+                    <span>Leave empty for random default tagline</span>
+                    <span><span id="tagline-count">0</span>/100</span>
+                </div>
+                {% if form.tagline.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.tagline.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Avatar Selection -->
+            <div>
+                <label for="avatar_path" class="block text-sm font-medium mb-1">{{ form.avatar_path.label }}</label>
+                {{ form.avatar_path(class="input-field") }}
+                <p class="text-xs text-mk-text-secondary mt-1">
+                    Select 'Default (random)' to assign a random avatar based on user ID
+                </p>
+                {% if form.avatar_path.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.avatar_path.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- User Info (Read-only) -->
+            <div class="p-4 bg-mk-darker rounded-lg border border-mk-darkest">
+                <h3 class="text-sm font-bold text-mk-text-secondary mb-2">Account Information</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-mk-text-secondary">User ID:</span>
+                        <span class="ml-2 font-mono">{{ user.id }}</span>
+                    </div>
+                    <div>
+                        <span class="text-mk-text-secondary">Admin:</span>
+                        <span class="ml-2">{% if user.is_admin %}Yes{% else %}No{% endif %}</span>
+                    </div>
+                    <div>
+                        <span class="text-mk-text-secondary">Joined:</span>
+                        <span class="ml-2">{{ user.created_at.strftime('%b %d, %Y') }}</span>
+                    </div>
+                    <div>
+                        <span class="text-mk-text-secondary">Updated:</span>
+                        <span class="ml-2">{{ user.updated_at.strftime('%b %d, %Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4 pt-2">
+                <a href="{{ url_for('admin.users') }}" class="btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary flex-1">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter for tagline
+    const taglineInput = document.getElementById('tagline-input');
+    const taglineCount = document.getElementById('tagline-count');
+
+    if (taglineInput && taglineCount) {
+        taglineInput.addEventListener('input', function() {
+            taglineCount.textContent = this.value.length;
+        });
+
+        // Initialize count on page load
+        taglineCount.textContent = taglineInput.value.length;
+    }
+</script>
+{% endblock %}

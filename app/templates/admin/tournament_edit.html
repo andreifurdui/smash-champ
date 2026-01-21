@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Tournament - Admin - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin.tournament_detail', tournament_id=tournament.id) }}" class="text-mk-text-secondary hover:text-mk-fire transition-colors">
+            ← Back to Tournament
+        </a>
+    </div>
+
+    <div class="card">
+        <h2 class="text-3xl font-bold text-center mb-2 text-mk-fire">Edit Tournament</h2>
+        <p class="text-center text-mk-text-secondary mb-6">Update tournament details</p>
+
+        <form method="POST" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            <!-- Tournament Name -->
+            <div>
+                <label for="name" class="block text-sm font-medium mb-1">{{ form.name.label }}</label>
+                {{ form.name(class="input-field", placeholder="e.g., Winter Championship 2026") }}
+                {% if form.name.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.name.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium mb-1">
+                    {{ form.description.label }}
+                </label>
+                {{ form.description(class="input-field", rows="4", placeholder="Describe the tournament... (optional)", maxlength="500", id="description-input") }}
+                <div class="text-right text-sm text-mk-text-secondary mt-1">
+                    <span id="description-count">0</span>/500
+                </div>
+                {% if form.description.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.description.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tournament Info (Read-only) -->
+            <div class="p-4 bg-mk-darker rounded-lg border border-mk-darkest">
+                <h3 class="text-sm font-bold text-mk-text-secondary mb-2">Tournament Settings (Fixed)</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-mk-text-secondary">Status:</span>
+                        <span class="ml-2 uppercase font-bold">{{ tournament.status }}</span>
+                    </div>
+                    <div>
+                        <span class="text-mk-text-secondary">Format:</span>
+                        <span class="ml-2 uppercase">{{ tournament.playoff_format }}</span>
+                    </div>
+                    <div>
+                        <span class="text-mk-text-secondary">Match Type:</span>
+                        <span class="ml-2">Best of {{ tournament.sets_to_win * 2 - 1 }}</span>
+                    </div>
+                    <div>
+                        <span class="text-mk-text-secondary">Players:</span>
+                        <span class="ml-2">{{ tournament.player_count }}</span>
+                    </div>
+                </div>
+                <p class="text-xs text-mk-text-secondary mt-3">
+                    Playoff format and match type cannot be changed after tournament creation.
+                </p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4 pt-2">
+                <a href="{{ url_for('admin.tournament_detail', tournament_id=tournament.id) }}" class="btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary flex-1">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Character counter for description
+    const descriptionInput = document.getElementById('description-input');
+    const descriptionCount = document.getElementById('description-count');
+
+    if (descriptionInput && descriptionCount) {
+        descriptionInput.addEventListener('input', function() {
+            descriptionCount.textContent = this.value.length;
+        });
+
+        // Initialize count on page load
+        descriptionCount.textContent = descriptionInput.value.length;
+    }
+</script>
+{% endblock %}
