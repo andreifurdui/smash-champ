@@ -25,7 +25,8 @@ def submit(match_id):
         flash(f'Cannot submit score for match in {match.status} status', 'warning')
         return redirect(url_for('main.dashboard'))
 
-    form = ScoreSubmissionForm()
+    sets_to_win = match.tournament.sets_to_win
+    form = ScoreSubmissionForm(sets_to_win=sets_to_win)
 
     if form.validate_on_submit():
         try:
@@ -73,7 +74,8 @@ def submit(match_id):
                          match=match,
                          form=form,
                          current_player=current_player,
-                         opponent=opponent)
+                         opponent=opponent,
+                         sets_to_win=sets_to_win)
 
 
 @bp.route('/<int:match_id>/confirm', methods=['POST'])

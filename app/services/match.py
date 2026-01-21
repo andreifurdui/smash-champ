@@ -161,9 +161,18 @@ def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Ma
     if match.status != MatchStatus.SCHEDULED.value:
         raise ValueError(f'Cannot submit score for match in {match.status} status')
 
-    # Validate sets (should be 2 or 3)
-    if not sets_data or len(sets_data) < 2 or len(sets_data) > 3:
-        raise ValueError('Match must have 2 or 3 sets')
+    # Get tournament's sets_to_win setting
+    sets_to_win = match.tournament.sets_to_win
+
+    # Validate number of sets based on format
+    if sets_to_win == 1:
+        # Best-of-1: exactly 1 set
+        if not sets_data or len(sets_data) != 1:
+            raise ValueError('Best-of-1 match must have exactly 1 set')
+    else:
+        # Best-of-3: 2 or 3 sets
+        if not sets_data or len(sets_data) < 2 or len(sets_data) > 3:
+            raise ValueError('Best-of-3 match must have 2 or 3 sets')
 
     # Create SetScore records and determine winner
     player1_sets_won = 0
@@ -189,13 +198,13 @@ def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Ma
 
         db.session.add(set_score)
 
-    # Determine winner (first to 2 sets)
-    if player1_sets_won >= 2:
+    # Determine winner based on sets_to_win
+    if player1_sets_won >= sets_to_win:
         match.winner_id = match.player1_id
-    elif player2_sets_won >= 2:
+    elif player2_sets_won >= sets_to_win:
         match.winner_id = match.player2_id
     else:
-        raise ValueError('No player won 2 sets')
+        raise ValueError(f'No player won {sets_to_win} set(s)')
 
     # Update match status
     match.status = MatchStatus.PENDING_CONFIRMATION.value

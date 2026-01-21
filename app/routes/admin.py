@@ -50,7 +50,8 @@ def tournament_create():
             tournament = create_tournament(
                 name=form.name.data,
                 description=form.description.data if form.description.data else None,
-                playoff_format=form.playoff_format.data
+                playoff_format=form.playoff_format.data,
+                sets_to_win=form.sets_to_win.data
             )
             flash(f'Tournament "{tournament.name}" created successfully!', 'success')
             return redirect(url_for('admin.tournament_detail', tournament_id=tournament.id))

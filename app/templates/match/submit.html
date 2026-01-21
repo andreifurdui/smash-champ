@@ -74,7 +74,8 @@
             </div>
         </div>
 
-        <!-- Set 2 -->
+        {% if sets_to_win == 2 %}
+        <!-- Set 2 (only for best-of-3) -->
         <div class="card bg-mk-darker border-2 border-mk-fire">
             <h3 class="text-xl font-bold text-mk-fire mb-4">Set 2</h3>
             <div class="grid grid-cols-2 gap-4">
@@ -95,7 +96,7 @@
             </div>
         </div>
 
-        <!-- Set 3 -->
+        <!-- Set 3 (only for best-of-3) -->
         <div class="card bg-mk-darker border-2 border-mk-darkest">
             <h3 class="text-xl font-bold mb-4">Set 3 <span class="text-sm text-mk-text-secondary font-normal">(if needed)</span></h3>
             <div class="grid grid-cols-2 gap-4">
@@ -115,6 +116,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Buttons -->
         <div class="flex gap-4">
@@ -125,7 +127,11 @@
 
     <!-- Rules Reminder -->
     <div class="mt-8 text-center text-sm text-mk-text-secondary">
+        {% if sets_to_win == 1 %}
+        <p>Table Tennis Rules: First to 11 points, must win by 2 • Single set match</p>
+        {% else %}
         <p>Table Tennis Rules: First to 11 points, must win by 2 • Best of 3 sets</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

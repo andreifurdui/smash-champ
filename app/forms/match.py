@@ -7,7 +7,7 @@ from wtforms.validators import DataRequired, NumberRange, ValidationError, Optio
 class ScoreSubmissionForm(FlaskForm):
     """Form for submitting match scores."""
 
-    # Set 1 (required)
+    # Set 1 (always required)
     set1_player1 = IntegerField('Set 1 - Your Score', validators=[
         DataRequired(),
         NumberRange(min=0, max=30, message='Score must be 0-30')
@@ -17,17 +17,17 @@ class ScoreSubmissionForm(FlaskForm):
         NumberRange(min=0, max=30, message='Score must be 0-30')
     ])
 
-    # Set 2 (required)
+    # Set 2 (required for best-of-3, not used for best-of-1)
     set2_player1 = IntegerField('Set 2 - Your Score', validators=[
-        DataRequired(),
+        Optional(),
         NumberRange(min=0, max=30, message='Score must be 0-30')
     ])
     set2_player2 = IntegerField('Set 2 - Opponent Score', validators=[
-        DataRequired(),
+        Optional(),
         NumberRange(min=0, max=30, message='Score must be 0-30')
     ])
 
-    # Set 3 (optional unless tied)
+    # Set 3 (optional, only for best-of-3 when tied)
     set3_player1 = IntegerField('Set 3 - Your Score', validators=[
         Optional(),
         NumberRange(min=0, max=30, message='Score must be 0-30')
@@ -38,6 +38,11 @@ class ScoreSubmissionForm(FlaskForm):
     ])
 
     submit = SubmitField('Submit Score')
+
+    def __init__(self, *args, sets_to_win=2, **kwargs):
+        """Initialize form with sets_to_win configuration."""
+        super().__init__(*args, **kwargs)
+        self.sets_to_win = sets_to_win
 
     def _is_valid_set(self, score1, score2):
         """Validate table tennis rules: First to 11, win by 2."""
@@ -54,12 +59,18 @@ class ScoreSubmissionForm(FlaskForm):
             raise ValidationError('Set 1 invalid: Must reach 11 and win by 2')
 
     def validate_set2_player1(self, field):
-        """Validate Set 2 is complete and valid."""
+        """Validate Set 2 is complete and valid (only for best-of-3)."""
+        if self.sets_to_win == 1:
+            return  # Set 2 not used for best-of-1
+        if field.data is None and self.set2_player2.data is None:
+            raise ValidationError('Set 2 is required for best-of-3')
         if not self._is_valid_set(field.data, self.set2_player2.data):
             raise ValidationError('Set 2 invalid: Must reach 11 and win by 2')
 
     def validate_set3_player1(self, field):
         """Validate Set 3 if provided."""
+        if self.sets_to_win == 1:
+            return  # Set 3 not used for best-of-1
         # Set 3 is optional unless match is tied
         if field.data is not None and self.set3_player2.data is not None:
             if not self._is_valid_set(field.data, self.set3_player2.data):
@@ -70,7 +81,12 @@ class ScoreSubmissionForm(FlaskForm):
         if not super().validate(extra_validators):
             return False
 
-        # Count sets won by each player
+        # Best-of-1: Only Set 1 matters
+        if self.sets_to_win == 1:
+            # Just need a valid Set 1 (already validated)
+            return True
+
+        # Best-of-3: Count sets won by each player
         p1_sets = 0
         p2_sets = 0
 
@@ -81,10 +97,11 @@ class ScoreSubmissionForm(FlaskForm):
             p2_sets += 1
 
         # Set 2
-        if self.set2_player1.data > self.set2_player2.data:
-            p1_sets += 1
-        else:
-            p2_sets += 1
+        if self.set2_player1.data is not None and self.set2_player2.data is not None:
+            if self.set2_player1.data > self.set2_player2.data:
+                p1_sets += 1
+            else:
+                p2_sets += 1
 
         # Set 3 (if provided)
         if self.set3_player1.data is not None and self.set3_player2.data is not None:

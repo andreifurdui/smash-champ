@@ -65,6 +65,22 @@
                 {% endif %}
             </div>
 
+            <!-- Match Format -->
+            <div>
+                <label for="sets_to_win" class="block text-sm font-medium mb-1">{{ form.sets_to_win.label }}</label>
+                {{ form.sets_to_win(class="input-field") }}
+                <p class="text-xs text-mk-text-secondary mt-1">
+                    Best of 3: First to win 2 sets (traditional) | Best of 1: Single set per match (faster)
+                </p>
+                {% if form.sets_to_win.errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.sets_to_win.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
             <!-- Buttons -->
             <div class="flex gap-4 pt-2">
                 <a href="{{ url_for('admin.dashboard') }}" class="btn-secondary flex-1 text-center">

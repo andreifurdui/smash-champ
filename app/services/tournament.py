@@ -13,7 +13,7 @@ class TournamentError(Exception):
     pass
 
 
-def create_tournament(name: str, description: Optional[str], playoff_format: str) -> Tournament:
+def create_tournament(name: str, description: Optional[str], playoff_format: str, sets_to_win: int = 2) -> Tournament:
     """
     Create a new tournament in REGISTRATION status.
 
@@ -21,6 +21,7 @@ def create_tournament(name: str, description: Optional[str], playoff_format: str
         name: Tournament name (3-128 chars)
         description: Optional tournament description (max 500 chars)
         playoff_format: Playoff format (e.g., GAUNTLET)
+        sets_to_win: Sets needed to win a match (1 for best-of-1, 2 for best-of-3)
 
     Returns:
         Created Tournament object
@@ -37,10 +38,14 @@ def create_tournament(name: str, description: Optional[str], playoff_format: str
     if description and len(description) > 500:
         raise TournamentError("Description must be at most 500 characters")
 
+    if sets_to_win not in (1, 2):
+        raise TournamentError("Sets to win must be 1 or 2")
+
     tournament = Tournament(
         name=name,
         description=description,
         playoff_format=playoff_format,
+        sets_to_win=sets_to_win,
         status=TournamentStatus.REGISTRATION
     )
 

@@ -28,6 +28,7 @@ class Tournament(db.Model):
     status = db.Column(db.String(20), default=TournamentStatus.REGISTRATION.value, nullable=False)
     phase = db.Column(db.Integer, default=0, nullable=False)  # For tracking sub-phases
     playoff_format = db.Column(db.String(20), default=PlayoffFormat.GAUNTLET.value, nullable=False)
+    sets_to_win = db.Column(db.Integer, default=2, nullable=False)  # 1 or 2 (best-of-1 or best-of-3)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     started_at = db.Column(db.DateTime, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)

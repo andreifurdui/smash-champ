@@ -23,3 +23,12 @@ class TournamentCreateForm(FlaskForm):
         default=PlayoffFormat.GAUNTLET.value,
         validators=[DataRequired()]
     )
+    sets_to_win = SelectField('Match Format',
+        choices=[
+            (2, 'Best of 3 (first to 2 sets)'),
+            (1, 'Best of 1 (single set)')
+        ],
+        default=2,
+        coerce=int,
+        validators=[DataRequired()]
+    )
