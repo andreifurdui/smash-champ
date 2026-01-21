@@ -399,5 +399,74 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Latest Matches Section (Full Width) -->
+    {% if global_activity %}
+    <div class="mt-8">
+        <h2 class="text-2xl font-bold mb-4">
+            <span class="text-mk-fire">🔥</span> Latest Matches
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for match in global_activity[:3] %}
+            <div class="card p-4">
+                <!-- Player 1 -->
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
+                         class="w-10 h-10 rounded-full border-2 {% if match.winner_id == match.player1_id %}border-green-500{% else %}border-mk-darkest{% endif %}">
+                    <span class="font-semibold {% if match.winner_id == match.player1_id %}text-green-500{% endif %}">
+                        {{ match.player1.username }}
+                        {% if match.winner_id == match.player1_id %}🏆{% endif %}
+                    </span>
+                </div>
+
+                <!-- Score Badge -->
+                <div class="flex justify-center my-3">
+                    {% if match.status == 'walkover' %}
+                    <div class="px-4 py-2 bg-purple-500 bg-opacity-20 border border-purple-500 rounded-lg">
+                        <span class="text-purple-500 font-bold text-lg">W/O</span>
+                    </div>
+                    {% else %}
+                    <div class="px-4 py-2 bg-mk-darkest rounded-lg">
+                        {% set p1_sets = namespace(count=0) %}
+                        {% set p2_sets = namespace(count=0) %}
+                        {% for set_score in match.set_scores %}
+                            {% if set_score.player1_score > set_score.player2_score %}
+                                {% set p1_sets.count = p1_sets.count + 1 %}
+                            {% else %}
+                                {% set p2_sets.count = p2_sets.count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        <span class="font-mono text-lg">
+                            <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% endif %}">{{ p1_sets.count }}</span>
+                            <span class="text-mk-text-secondary mx-2">-</span>
+                            <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-bold{% endif %}">{{ p2_sets.count }}</span>
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Player 2 -->
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
+                         class="w-10 h-10 rounded-full border-2 {% if match.winner_id == match.player2_id %}border-green-500{% else %}border-mk-darkest{% endif %}">
+                    <span class="font-semibold {% if match.winner_id == match.player2_id %}text-green-500{% endif %}">
+                        {{ match.player2.username }}
+                        {% if match.winner_id == match.player2_id %}🏆{% endif %}
+                    </span>
+                </div>
+
+                <!-- Tournament Info -->
+                <div class="text-xs text-mk-text-secondary border-t border-mk-darkest pt-3 mt-2">
+                    <div class="flex justify-between">
+                        <span>{{ match.tournament.name }}</span>
+                        <span>{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
