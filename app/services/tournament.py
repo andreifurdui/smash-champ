@@ -13,6 +13,46 @@ class TournamentError(Exception):
     pass
 
 
+def _generate_round_robin_schedule(players: list) -> list[tuple]:
+    """
+    Generate round-robin schedule using circle method.
+
+    Each player plays once per round before anyone plays their second match.
+    For n players: (n-1) rounds for single round-robin.
+
+    Args:
+        players: List of player objects (must have .id attribute)
+
+    Returns:
+        List of (player1_id, player2_id) tuples ordered by round.
+    """
+    n = len(players)
+    player_ids = [p.id for p in players]
+
+    # Add bye if odd number of players
+    if n % 2 == 1:
+        player_ids.append(None)  # bye
+        n += 1
+
+    schedule = []
+
+    # n-1 rounds for single round-robin
+    for round_num in range(n - 1):
+        round_matches = []
+        for i in range(n // 2):
+            p1 = player_ids[i]
+            p2 = player_ids[n - 1 - i]
+            # Skip byes
+            if p1 is not None and p2 is not None:
+                round_matches.append((p1, p2))
+        schedule.extend(round_matches)
+
+        # Rotate: fix first player, rotate rest clockwise
+        player_ids = [player_ids[0]] + [player_ids[-1]] + player_ids[1:-1]
+
+    return schedule
+
+
 def create_tournament(name: str, description: Optional[str], playoff_format: str, sets_to_win: int = 2) -> Tournament:
     """
     Create a new tournament in REGISTRATION status.
@@ -72,10 +112,9 @@ def start_group_stage(tournament_id: int) -> int:
     """
     Start group stage and generate double round-robin fixtures.
 
-    Algorithm:
-    - For each pair of players (i, j) where i < j:
-      * Match 1: player_i vs player_j (fixture_number=1)
-      * Match 2: player_j vs player_i (fixture_number=2)
+    Algorithm: Circle method for fair round-robin scheduling.
+    - Each player plays once per round before anyone plays a second match
+    - First fixtures (n-1 rounds), then return fixtures (n-1 rounds)
     - Total matches: n × (n-1) where n = player count
 
     Args:
@@ -113,34 +152,35 @@ def start_group_stage(tournament_id: int) -> int:
     if existing_matches:
         raise TournamentError("Group stage fixtures already exist")
 
-    # Generate double round-robin fixtures
+    # Generate round-robin schedule (proper round ordering)
+    first_fixture_pairs = _generate_round_robin_schedule(players)
     matches_created = 0
 
-    for i in range(player_count):
-        for j in range(i + 1, player_count):
-            # First fixture: player_i vs player_j
-            match1 = Match(
-                tournament_id=tournament_id,
-                player1_id=players[i].id,
-                player2_id=players[j].id,
-                phase=MatchPhase.GROUP,
-                fixture_number=1,
-                status=MatchStatus.SCHEDULED
-            )
-            db.session.add(match1)
-            matches_created += 1
+    # Create matches for first fixtures (fixture_number=1)
+    for p1_id, p2_id in first_fixture_pairs:
+        match = Match(
+            tournament_id=tournament_id,
+            player1_id=p1_id,
+            player2_id=p2_id,
+            phase=MatchPhase.GROUP,
+            fixture_number=1,
+            status=MatchStatus.SCHEDULED
+        )
+        db.session.add(match)
+        matches_created += 1
 
-            # Second fixture: player_j vs player_i (home/away swap)
-            match2 = Match(
-                tournament_id=tournament_id,
-                player1_id=players[j].id,
-                player2_id=players[i].id,
-                phase=MatchPhase.GROUP,
-                fixture_number=2,
-                status=MatchStatus.SCHEDULED
-            )
-            db.session.add(match2)
-            matches_created += 1
+    # Create return fixtures (fixture_number=2) in same round order
+    for p1_id, p2_id in first_fixture_pairs:
+        match = Match(
+            tournament_id=tournament_id,
+            player1_id=p2_id,  # Swapped
+            player2_id=p1_id,
+            phase=MatchPhase.GROUP,
+            fixture_number=2,
+            status=MatchStatus.SCHEDULED
+        )
+        db.session.add(match)
+        matches_created += 1
 
     # Update tournament status
     tournament.status = TournamentStatus.GROUP_STAGE
