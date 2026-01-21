@@ -476,3 +476,98 @@ def _update_walkover_statistics(match: Match, forfeiting_user_id: int) -> None:
     # Winner gets +2 points, loser gets +0 points (harsher than loss where loser gets +1)
     winner_reg.group_points += 2
     # loser gets 0 points (no addition needed)
+
+
+def reset_disputed_match(match_id: int, admin_override: bool = False) -> Match:
+    """
+    Reset a disputed match so players can resubmit scores.
+
+    Args:
+        match_id: Match ID
+        admin_override: If True, allows admin to reset (default False)
+
+    Returns:
+        Reset Match object
+
+    Raises:
+        ValueError: If match is not in disputed status
+    """
+    from app.models import SetScore
+
+    match = Match.query.get_or_404(match_id)
+
+    if match.status != MatchStatus.DISPUTED.value:
+        raise ValueError('Can only reset disputed matches')
+
+    # Delete existing set scores
+    SetScore.query.filter_by(match_id=match_id).delete()
+
+    # Reset match fields
+    match.status = MatchStatus.SCHEDULED.value
+    match.winner_id = None
+    match.submitted_by_id = None
+    match.submitted_at = None
+    match.confirmed_by_id = None
+    match.confirmed_at = None
+    match.played_at = None
+
+    db.session.commit()
+    return match
+
+
+def admin_set_match_score(match_id: int, sets_data: list[dict], winner_id: int) -> Match:
+    """
+    Admin sets the final score for a disputed match.
+
+    Args:
+        match_id: Match ID
+        sets_data: List of dicts with player1_score, player2_score
+        winner_id: User ID of the winner
+
+    Returns:
+        Updated Match object
+
+    Raises:
+        ValueError: If validation fails
+    """
+    from app.models import SetScore
+    from datetime import datetime
+
+    match = Match.query.get_or_404(match_id)
+
+    if match.status != MatchStatus.DISPUTED.value:
+        raise ValueError('Can only set score for disputed matches')
+
+    if winner_id not in (match.player1_id, match.player2_id):
+        raise ValueError('Winner must be a match participant')
+
+    # Delete existing set scores
+    SetScore.query.filter_by(match_id=match_id).delete()
+
+    # Create new set scores
+    for i, set_data in enumerate(sets_data):
+        set_score = SetScore(
+            match_id=match_id,
+            set_number=i + 1,
+            player1_score=set_data['player1_score'],
+            player2_score=set_data['player2_score']
+        )
+        db.session.add(set_score)
+
+    # Finalize match
+    match.winner_id = winner_id
+    match.status = MatchStatus.CONFIRMED.value
+    match.confirmed_at = datetime.utcnow()
+    match.played_at = datetime.utcnow()
+
+    # Update statistics (reuse existing helper)
+    _update_match_statistics(match)
+
+    db.session.commit()
+
+    # Handle playoff advancement if needed
+    if match.phase == MatchPhase.PLAYOFF.value:
+        from app.services.tournament import advance_playoff_winner
+        advance_playoff_winner(match.id)
+
+    return match

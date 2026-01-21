@@ -173,6 +173,65 @@
                     <span class="text-xs text-green-500">Confirmed</span>
                     {% elif match.status == 'disputed' %}
                     <span class="text-xs text-red-500">Disputed</span>
+                    <!-- Dispute Resolution Actions -->
+                    <div class="mt-3 space-y-2">
+                        <!-- Reset Button -->
+                        <form method="POST" action="{{ url_for('admin.match_reset', match_id=match.id) }}"
+                              onsubmit="return confirm('Reset this match? Players will need to resubmit scores.');" class="inline-block">
+                            <button type="submit" class="text-xs bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 rounded">
+                                Reset (Resubmit)
+                            </button>
+                        </form>
+                        <!-- Set Score Form (expandable) -->
+                        <details class="text-xs text-left mt-2">
+                            <summary class="cursor-pointer text-blue-400 hover:text-blue-300 text-center">Set Score Manually</summary>
+                            <form method="POST" action="{{ url_for('admin.match_set_score', match_id=match.id) }}" class="mt-2 p-3 bg-mk-darkest rounded">
+                                {% if tournament.sets_to_win == 1 %}
+                                <!-- Best-of-1: Single set -->
+                                <div class="flex gap-2 mb-2 items-center justify-center">
+                                    <span class="w-10">Set 1:</span>
+                                    <input type="number" name="set1_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                    <span>-</span>
+                                    <input type="number" name="set1_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                </div>
+                                {% else %}
+                                <!-- Best-of-3: Multiple sets -->
+                                <div class="flex gap-2 mb-1 items-center justify-center">
+                                    <span class="w-10">Set 1:</span>
+                                    <input type="number" name="set1_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                    <span>-</span>
+                                    <input type="number" name="set1_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                </div>
+                                <div class="flex gap-2 mb-1 items-center justify-center">
+                                    <span class="w-10">Set 2:</span>
+                                    <input type="number" name="set2_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                    <span>-</span>
+                                    <input type="number" name="set2_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                </div>
+                                <div class="flex gap-2 mb-2 items-center justify-center">
+                                    <span class="w-10">Set 3:</span>
+                                    <input type="number" name="set3_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center">
+                                    <span>-</span>
+                                    <input type="number" name="set3_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center">
+                                </div>
+                                {% endif %}
+                                <!-- Winner Selection -->
+                                <div class="mb-2 text-center">
+                                    <label class="mr-3">
+                                        <input type="radio" name="winner_id" value="{{ match.player1_id }}" required> {{ match.player1.username }}
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="winner_id" value="{{ match.player2_id }}"> {{ match.player2.username }}
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-black px-3 py-1 rounded">
+                                        Confirm Score
+                                    </button>
+                                </div>
+                            </form>
+                        </details>
+                    </div>
                     {% elif match.status == 'walkover' %}
                     <span class="text-xs text-purple-500">Walkover - {{ match.winner.username }} wins</span>
                     {% endif %}
@@ -294,6 +353,8 @@
                             <div class="text-sm text-mk-text-secondary">Winner: {{ match.winner.username }}</div>
                         {% elif match.status == 'pending_confirmation' %}
                             <div class="text-yellow-500 font-bold">⏳ Pending</div>
+                        {% elif match.status == 'disputed' %}
+                            <div class="text-red-500 font-bold">⚠ Disputed</div>
                         {% else %}
                             <div class="text-mk-text-secondary">Scheduled</div>
                         {% endif %}
@@ -308,6 +369,68 @@
                         Set {{ set_score.set_number }}: {{ set_score.player1_score }}-{{ set_score.player2_score }}
                     </span>
                     {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Dispute Resolution for Playoff matches -->
+                {% if match.status == 'disputed' %}
+                <div class="mt-3 space-y-2 text-center">
+                    <!-- Reset Button -->
+                    <form method="POST" action="{{ url_for('admin.match_reset', match_id=match.id) }}"
+                          onsubmit="return confirm('Reset this match? Players will need to resubmit scores.');" class="inline-block">
+                        <button type="submit" class="text-xs bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 rounded">
+                            Reset (Resubmit)
+                        </button>
+                    </form>
+                    <!-- Set Score Form (expandable) -->
+                    <details class="text-xs text-left mt-2">
+                        <summary class="cursor-pointer text-blue-400 hover:text-blue-300 text-center">Set Score Manually</summary>
+                        <form method="POST" action="{{ url_for('admin.match_set_score', match_id=match.id) }}" class="mt-2 p-3 bg-mk-darkest rounded">
+                            {% if tournament.sets_to_win == 1 %}
+                            <!-- Best-of-1: Single set -->
+                            <div class="flex gap-2 mb-2 items-center justify-center">
+                                <span class="w-10">Set 1:</span>
+                                <input type="number" name="set1_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                <span>-</span>
+                                <input type="number" name="set1_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                            </div>
+                            {% else %}
+                            <!-- Best-of-3: Multiple sets -->
+                            <div class="flex gap-2 mb-1 items-center justify-center">
+                                <span class="w-10">Set 1:</span>
+                                <input type="number" name="set1_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                <span>-</span>
+                                <input type="number" name="set1_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                            </div>
+                            <div class="flex gap-2 mb-1 items-center justify-center">
+                                <span class="w-10">Set 2:</span>
+                                <input type="number" name="set2_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                                <span>-</span>
+                                <input type="number" name="set2_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center" required>
+                            </div>
+                            <div class="flex gap-2 mb-2 items-center justify-center">
+                                <span class="w-10">Set 3:</span>
+                                <input type="number" name="set3_p1" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center">
+                                <span>-</span>
+                                <input type="number" name="set3_p2" min="0" max="99" class="w-12 bg-mk-darker rounded px-1 text-center">
+                            </div>
+                            {% endif %}
+                            <!-- Winner Selection -->
+                            <div class="mb-2 text-center">
+                                <label class="mr-3">
+                                    <input type="radio" name="winner_id" value="{{ match.player1_id }}" required> {{ match.player1.username }}
+                                </label>
+                                <label>
+                                    <input type="radio" name="winner_id" value="{{ match.player2_id }}"> {{ match.player2.username }}
+                                </label>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-black px-3 py-1 rounded">
+                                    Confirm Score
+                                </button>
+                            </div>
+                        </form>
+                    </details>
                 </div>
                 {% endif %}
 

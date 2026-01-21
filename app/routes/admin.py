@@ -6,7 +6,7 @@ from flask_login import current_user
 from app.extensions import db
 from app.models import Tournament, TournamentStatus, MatchPhase, Match
 from app.forms.tournament import TournamentCreateForm
-from app.services.match import forfeit_match
+from app.services.match import forfeit_match, reset_disputed_match, admin_set_match_score
 from app.services.tournament import (
     create_tournament,
     get_tournament_with_players,
@@ -214,6 +214,85 @@ def match_forfeit(match_id, forfeiting_user_id):
     try:
         forfeit_match(match_id, forfeiting_user_id, admin_override=True)
         flash('Match forfeited. Winner awarded by walkover.', 'success')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+
+    return redirect(url_for('admin.tournament_detail', tournament_id=match.tournament_id))
+
+
+@bp.route('/match/<int:match_id>/reset', methods=['POST'])
+@admin_required
+def match_reset(match_id):
+    """
+    Admin action: Reset a disputed match so players can resubmit scores.
+
+    Clears all set scores and resets match to scheduled status.
+    """
+    match = Match.query.get_or_404(match_id)
+
+    try:
+        reset_disputed_match(match_id, admin_override=True)
+        flash('Match reset. Players can resubmit scores.', 'success')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'An error occurred: {str(e)}', 'error')
+
+    return redirect(url_for('admin.tournament_detail', tournament_id=match.tournament_id))
+
+
+@bp.route('/match/<int:match_id>/set-score', methods=['POST'])
+@admin_required
+def match_set_score(match_id):
+    """
+    Admin action: Set the final score for a disputed match.
+
+    Accepts set scores and winner from form data.
+    """
+    match = Match.query.get_or_404(match_id)
+
+    try:
+        # Parse set scores from form
+        sets_data = []
+
+        # Set 1 (required)
+        set1_p1 = request.form.get('set1_p1', type=int)
+        set1_p2 = request.form.get('set1_p2', type=int)
+        if set1_p1 is not None and set1_p2 is not None:
+            sets_data.append({'player1_score': set1_p1, 'player2_score': set1_p2})
+
+        # Set 2 (required)
+        set2_p1 = request.form.get('set2_p1', type=int)
+        set2_p2 = request.form.get('set2_p2', type=int)
+        if set2_p1 is not None and set2_p2 is not None:
+            sets_data.append({'player1_score': set2_p1, 'player2_score': set2_p2})
+
+        # Set 3 (optional)
+        set3_p1 = request.form.get('set3_p1', type=int)
+        set3_p2 = request.form.get('set3_p2', type=int)
+        if set3_p1 is not None and set3_p2 is not None:
+            sets_data.append({'player1_score': set3_p1, 'player2_score': set3_p2})
+
+        # Get winner
+        winner_id = request.form.get('winner_id', type=int)
+        if not winner_id:
+            raise ValueError('Winner must be selected')
+
+        # Validate sets based on tournament format
+        sets_to_win = match.tournament.sets_to_win
+        if sets_to_win == 1:
+            if len(sets_data) != 1:
+                raise ValueError('Best-of-1 match must have exactly 1 set')
+        else:
+            if len(sets_data) < 2:
+                raise ValueError('At least 2 sets are required for best-of-3')
+
+        admin_set_match_score(match_id, sets_data, winner_id)
+        flash('Match score set and confirmed.', 'success')
     except ValueError as e:
         flash(str(e), 'error')
     except Exception as e:
