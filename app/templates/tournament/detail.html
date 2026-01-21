@@ -296,8 +296,24 @@
                                 </span>
                             </div>
 
-                            <!-- VS Badge -->
+                            <!-- Score/VS Display -->
+                            {% if match.status == 'confirmed' %}
+                            <div class="flex items-center gap-2 font-mono text-sm mx-4">
+                                {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                                <span class="px-2 py-1 bg-mk-darkest rounded">
+                                    <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% endif %}">{{ set_score.player1_score }}</span>
+                                    <span class="text-mk-text-secondary">-</span>
+                                    <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% endif %}">{{ set_score.player2_score }}</span>
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% elif match.status == 'walkover' %}
+                            <div class="px-3 py-1 bg-purple-500 bg-opacity-20 border border-purple-500 rounded mx-4">
+                                <span class="text-purple-500 font-semibold">W/O</span>
+                            </div>
+                            {% else %}
                             <div class="px-4 py-1 bg-mk-fire text-mk-dark font-bold rounded mx-4">VS</div>
+                            {% endif %}
 
                             <!-- Player 2 -->
                             <div class="flex items-center gap-3 flex-1 justify-end">
@@ -313,20 +329,18 @@
                             </div>
                         </div>
 
-                        <!-- Status -->
+                        <!-- Status (only show for pending, disputed, walkover) -->
+                        {% if match.status in ['pending_confirmation', 'disputed', 'walkover'] %}
                         <div class="mt-3 text-center text-xs">
-                            {% if match.status == 'scheduled' %}
-                            <span class="text-mk-text-secondary">⏱ Scheduled</span>
-                            {% elif match.status == 'pending_confirmation' %}
+                            {% if match.status == 'pending_confirmation' %}
                             <span class="text-yellow-500">⏳ Awaiting Confirmation</span>
-                            {% elif match.status == 'confirmed' %}
-                            <span class="text-green-500">✓ Confirmed</span>
                             {% elif match.status == 'disputed' %}
                             <span class="text-red-500">⚠️ Disputed</span>
                             {% elif match.status == 'walkover' %}
                             <span class="text-purple-500">🚫 Walkover - {{ match.winner.username }} wins</span>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
