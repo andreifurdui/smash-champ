@@ -16,7 +16,7 @@ def get_dashboard_data(user_id: int) -> dict:
     Returns:
         Dictionary with all dashboard components:
         {
-            'next_match': Match or None,
+            'upcoming_matches': [Match],
             'recent_matches': [Match],
             'pending_confirmations': [Match],
             'active_tournaments': [Tournament],
@@ -25,7 +25,7 @@ def get_dashboard_data(user_id: int) -> dict:
         }
     """
     return {
-        'next_match': match.get_user_next_match(user_id),
+        'upcoming_matches': match.get_user_upcoming_matches(user_id, limit=3),
         'recent_matches': match.get_user_recent_matches(user_id, limit=5),
         'pending_confirmations': match.get_user_pending_confirmations(user_id),
         'active_tournaments': tournament.get_user_tournaments(user_id),

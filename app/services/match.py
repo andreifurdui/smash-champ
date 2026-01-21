@@ -31,6 +31,30 @@ def get_user_next_match(user_id: int) -> Optional[Match]:
     ).first()
 
 
+def get_user_upcoming_matches(user_id: int, limit: int = 3) -> List[Match]:
+    """
+    Get user's next N scheduled matches (ordered by scheduled_at or creation).
+
+    Args:
+        user_id: User ID
+        limit: Number of matches to return (default 3)
+
+    Returns:
+        List of Match objects
+    """
+    return Match.query.filter(
+        or_(Match.player1_id == user_id, Match.player2_id == user_id),
+        Match.status == MatchStatus.SCHEDULED.value
+    ).options(
+        db.joinedload(Match.player1),
+        db.joinedload(Match.player2),
+        db.joinedload(Match.tournament)
+    ).order_by(
+        Match.scheduled_at.asc().nullslast(),
+        Match.id.asc()  # Creation order = round order
+    ).limit(limit).all()
+
+
 def get_user_recent_matches(user_id: int, limit: int = 5) -> List[Match]:
     """
     Get user's most recent confirmed matches.

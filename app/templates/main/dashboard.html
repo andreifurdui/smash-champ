@@ -323,66 +323,46 @@
             {% endif %}
         </div>
 
-        <!-- Next Match Card -->
+        <!-- Upcoming Matches Card -->
         <div class="card">
             <h2 class="text-2xl font-bold mb-6">
-                <span class="text-mk-fire">⚔️</span> Your Next Match
+                <span class="text-mk-fire">⚔️</span> Your Upcoming Matches
             </h2>
 
-            {% if next_match %}
-            <!-- VS Card with Enhanced Styling -->
-            <div class="relative bg-gradient-to-r from-mk-darkest via-mk-darker to-mk-darkest border-2 border-mk-fire rounded-lg p-6 mb-4">
-                <!-- Tournament Name -->
-                <div class="text-center text-xs text-mk-text-secondary mb-4">
-                    {{ next_match.tournament.name }} - {{ next_match.phase|upper }}
-                </div>
-
-                <!-- VS Layout -->
-                <div class="flex flex-col sm:flex-row items-center justify-between">
-                    <!-- Player 1 (Current User or Opponent) -->
-                    {% set is_player1 = next_match.player1_id == current_user.id %}
-                    {% set player = next_match.player1 if is_player1 else next_match.player2 %}
-                    {% set opponent = next_match.player2 if is_player1 else next_match.player1 %}
-
-                    <div class="flex-1 text-center mb-4 sm:mb-0">
-                        <img src="{{ player.avatar }}" alt="{{ player.username }}"
-                             class="w-24 h-24 rounded-full border-4 border-mk-fire mx-auto mb-3 shadow-lg">
-                        <div class="font-bold text-xl text-mk-fire">{{ player.username }}</div>
-                        <div class="text-xs italic text-mk-text-secondary mt-1">"{{ player.tagline }}"</div>
-                    </div>
-
-                    <!-- VS Badge -->
-                    <div class="px-6 py-3 bg-mk-fire text-mk-dark font-black text-2xl rounded-lg mx-6 shadow-xl transform hover:scale-110 transition-transform">
-                        VS
-                    </div>
-
-                    <!-- Player 2 (Opponent or Current User) -->
-                    <div class="flex-1 text-center mt-4 sm:mt-0">
+            {% if upcoming_matches %}
+            <!-- Vertical List of Match Cards -->
+            <div class="space-y-3">
+                {% for match in upcoming_matches %}
+                {% set opponent = match.get_opponent(current_user.id) %}
+                <div class="bg-gradient-to-r from-mk-darkest to-mk-darker border {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} rounded-lg p-4 hover:border-mk-fire transition-colors">
+                    <div class="flex items-center gap-4">
+                        <!-- Opponent Avatar -->
                         <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
-                             class="w-24 h-24 rounded-full border-4 border-mk-darkest mx-auto mb-3 shadow-lg">
-                        <div class="font-bold text-xl">{{ opponent.username }}</div>
-                        <div class="text-xs italic text-mk-text-secondary mt-1">"{{ opponent.tagline }}"</div>
-                    </div>
-                </div>
+                             class="w-14 h-14 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} flex-shrink-0">
 
-                <!-- Match Info Footer -->
-                <div class="mt-6 pt-4 border-t border-mk-darkest text-center">
-                    <div class="text-sm text-mk-text-secondary">
-                        Best of 3 Sets • First to 11 Points
-                    </div>
-                    {% if next_match.scheduled_at %}
-                    <div class="text-xs text-mk-fire mt-2">
-                        Scheduled: {{ next_match.scheduled_at.strftime('%b %d, %I:%M %p') }}
-                    </div>
-                    {% endif %}
-                </div>
+                        <!-- Opponent Info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-lg">{{ opponent.username }}</span>
+                                <span class="px-2 py-0.5 bg-mk-fire text-mk-dark font-black text-xs rounded">VS</span>
+                                {% if loop.first %}
+                                <span class="text-xs text-mk-fire">Recommended</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-mk-text-secondary truncate">"{{ opponent.tagline }}"</div>
+                            <div class="text-xs text-mk-text-secondary mt-1">
+                                {{ match.tournament.name }} · <span class="text-mk-fire">{{ match.phase|upper }}</span>
+                            </div>
+                        </div>
 
-                <!-- Action Button -->
-                <div class="mt-4">
-                    <a href="{{ url_for('match.submit', match_id=next_match.id) }}" class="btn-primary w-full text-center">
-                        Submit Score
-                    </a>
+                        <!-- Submit Score Button -->
+                        <a href="{{ url_for('match.submit', match_id=match.id) }}"
+                           class="px-4 py-2 {% if loop.first %}bg-mk-fire hover:bg-mk-fire-light text-mk-dark{% else %}bg-mk-darkest hover:bg-mk-fire text-white hover:text-mk-dark{% endif %} font-bold rounded transition-colors flex-shrink-0">
+                            Submit Score
+                        </a>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
             {% else %}
             <!-- Empty State -->
