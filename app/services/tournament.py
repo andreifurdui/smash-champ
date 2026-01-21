@@ -601,6 +601,17 @@ def advance_playoff_winner(match_id: int) -> None:
     gauntlet_order = list(reversed(seeded_player_ids))
     next_opponent_id = gauntlet_order[next_round]  # next_round is 0-indexed position
 
+    # Check if next round match already exists (idempotency guard)
+    existing_match = Match.query.filter_by(
+        tournament_id=match.tournament_id,
+        phase=MatchPhase.PLAYOFF.value,
+        bracket_round=next_round
+    ).first()
+
+    if existing_match:
+        # Match already exists, don't create duplicate
+        return
+
     # Create next playoff match
     next_match = Match(
         tournament_id=match.tournament_id,
@@ -613,6 +624,42 @@ def advance_playoff_winner(match_id: int) -> None:
     )
     db.session.add(next_match)
     db.session.commit()
+
+
+def get_final_standings(tournament_id: int) -> list[dict]:
+    """
+    Get final standings for a completed tournament.
+    Returns players ordered by final_position with their stats.
+
+    Args:
+        tournament_id: Tournament ID
+
+    Returns:
+        List of dicts with: position, user, registration, seed
+    """
+    from app.models import TournamentWinner
+
+    winners = TournamentWinner.query.filter_by(
+        tournament_id=tournament_id
+    ).options(
+        db.joinedload(TournamentWinner.user)
+    ).order_by(TournamentWinner.position.asc()).all()
+
+    standings = []
+    for winner in winners:
+        reg = Registration.query.filter_by(
+            tournament_id=tournament_id,
+            user_id=winner.user_id
+        ).first()
+
+        standings.append({
+            'position': winner.position,
+            'user': winner.user,
+            'registration': reg,
+            'seed': reg.seed if reg else None
+        })
+
+    return standings
 
 
 def complete_tournament(tournament_id: int) -> Tournament:

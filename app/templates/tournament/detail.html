@@ -85,7 +85,7 @@
     </div>
 
     <!-- Tabs -->
-    <div x-data="{ activeTab: 'overview' }">
+    <div x-data="{ activeTab: '{% if final_standings %}final{% else %}overview{% endif %}' }">
         <!-- Tab Navigation -->
         <div class="flex border-b border-mk-darkest mb-6">
             <button @click="activeTab = 'overview'"
@@ -100,11 +100,25 @@
                 Standings
             </button>
             {% endif %}
+            {% if final_standings %}
+            <button @click="activeTab = 'final'"
+                    :class="activeTab === 'final' ? 'border-mk-fire text-mk-fire' : 'border-transparent text-mk-text-secondary'"
+                    class="px-6 py-3 font-semibold border-b-2 hover:text-mk-fire transition-colors">
+                Final Standings
+            </button>
+            {% endif %}
             <button @click="activeTab = 'fixtures'"
                     :class="activeTab === 'fixtures' ? 'border-mk-fire text-mk-fire' : 'border-transparent text-mk-text-secondary'"
                     class="px-6 py-3 font-semibold border-b-2 hover:text-mk-fire transition-colors">
                 Fixtures
             </button>
+            {% if playoff_matches %}
+            <button @click="activeTab = 'bracket'"
+                    :class="activeTab === 'bracket' ? 'border-mk-fire text-mk-fire' : 'border-transparent text-mk-text-secondary'"
+                    class="px-6 py-3 font-semibold border-b-2 hover:text-mk-fire transition-colors">
+                Bracket
+            </button>
+            {% endif %}
         </div>
 
         <!-- Tab 1: Overview (Player List) -->
@@ -213,6 +227,52 @@
         </div>
         {% endif %}
 
+        <!-- Tab: Final Standings -->
+        {% if final_standings %}
+        <div x-show="activeTab === 'final'">
+            <div class="card">
+                <h2 class="text-2xl font-bold mb-6">🏆 Final Standings</h2>
+
+                <div class="space-y-3">
+                    {% for standing in final_standings %}
+                    <div class="rounded-lg p-4 flex items-center gap-4
+                        {% if standing.position == 1 %}bg-yellow-500 bg-opacity-20 border-2 border-yellow-500
+                        {% elif standing.position == 2 %}bg-gray-400 bg-opacity-20 border-2 border-gray-400
+                        {% elif standing.position == 3 %}bg-amber-600 bg-opacity-20 border-2 border-amber-600
+                        {% else %}bg-mk-darker border border-mk-darkest{% endif %}">
+
+                        <!-- Position -->
+                        <div class="text-2xl font-bold w-12 text-center">
+                            {% if standing.position == 1 %}🥇
+                            {% elif standing.position == 2 %}🥈
+                            {% elif standing.position == 3 %}🥉
+                            {% else %}{{ standing.position }}{% endif %}
+                        </div>
+
+                        <!-- Player Info -->
+                        <img src="{{ standing.user.avatar }}" alt="{{ standing.user.username }}" class="w-12 h-12 rounded-full">
+                        <div class="flex-1">
+                            <div class="font-bold text-lg">
+                                {{ standing.user.username }}
+                                {% if standing.user.id == current_user.id %}
+                                <span class="text-mk-fire text-sm">(You)</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-mk-text-secondary">
+                                {% if standing.position == 1 %}Champion
+                                {% elif standing.position == 2 %}Runner-up
+                                {% elif standing.position == 3 %}3rd Place
+                                {% else %}{{ standing.position }}th Place{% endif %}
+                                {% if standing.seed %} • Seed #{{ standing.seed }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Tab 3: Fixtures List -->
         <div x-show="activeTab === 'fixtures'">
             <div class="card">
@@ -273,6 +333,118 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Tab 4: Playoff Bracket -->
+        {% if playoff_matches %}
+        <div x-show="activeTab === 'bracket'">
+            <div class="card">
+                <h2 class="text-2xl font-bold mb-4">Playoff Bracket - Gauntlet</h2>
+                <p class="text-sm text-mk-text-secondary mb-6">
+                    Winner challenges next seed until championship
+                </p>
+
+                <div class="space-y-4">
+                    {% for match in playoff_matches|sort(attribute='bracket_round') %}
+                    {% set is_final = loop.last %}
+                    <div class="bg-mk-darker border-2 rounded-lg p-4
+                                {% if match.status == 'confirmed' %}border-green-500
+                                {% elif match.status == 'walkover' %}border-purple-500
+                                {% elif match.status == 'pending_confirmation' %}border-yellow-500
+                                {% else %}border-mk-darkest{% endif %}
+                                {% if is_final %}ring-2 ring-mk-fire ring-opacity-50{% endif %}">
+
+                        <!-- Round Label -->
+                        <div class="text-xs font-bold text-mk-text-secondary mb-3 uppercase tracking-wider">
+                            {% if is_final %}
+                            🏆 Championship Final
+                            {% else %}
+                            Round {{ match.bracket_round }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Match Display -->
+                        <div class="flex items-center justify-between flex-wrap gap-4">
+                            <!-- Player 1 -->
+                            <div class="flex items-center gap-3 flex-1 min-w-[140px]">
+                                <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}" class="w-10 h-10 rounded-full">
+                                <div>
+                                    <div class="font-semibold {% if match.winner_id == match.player1_id %}text-mk-fire{% endif %} {% if match.player1_id == current_user.id %}underline{% endif %}">
+                                        {{ match.player1.username }}
+                                        {% if match.winner_id == match.player1_id %}👑{% endif %}
+                                    </div>
+                                    {% set reg1 = match.player1.registrations|selectattr('tournament_id', 'equalto', tournament.id)|first %}
+                                    {% if reg1 and reg1.seed %}
+                                    <div class="text-xs text-mk-text-secondary">Seed #{{ reg1.seed }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- VS / Score -->
+                            <div class="px-4 text-center">
+                                {% if match.status in ['confirmed', 'walkover'] %}
+                                    {% if match.status == 'walkover' %}
+                                    <span class="text-purple-500 font-bold text-sm">W/O</span>
+                                    {% else %}
+                                    {% set p1_sets = match.set_scores|selectattr('player1_score', 'gt', match.set_scores[0].player2_score if match.set_scores else 0)|list|length %}
+                                    {% set scores = [] %}
+                                    {% for set in match.set_scores|sort(attribute='set_number') %}
+                                        {% set _ = scores.append(set.player1_score|string ~ '-' ~ set.player2_score|string) %}
+                                    {% endfor %}
+                                    <div class="text-sm font-mono text-mk-text-secondary">
+                                        {% for set in match.set_scores|sort(attribute='set_number') %}
+                                        <span class="{% if set.player1_score > set.player2_score %}text-green-500{% else %}text-red-500{% endif %}">
+                                            {{ set.player1_score }}-{{ set.player2_score }}
+                                        </span>{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                {% else %}
+                                <span class="bg-mk-fire text-mk-dark font-bold px-3 py-1 rounded text-sm">VS</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Player 2 -->
+                            <div class="flex items-center gap-3 flex-1 min-w-[140px] justify-end text-right">
+                                <div>
+                                    <div class="font-semibold {% if match.winner_id == match.player2_id %}text-mk-fire{% endif %} {% if match.player2_id == current_user.id %}underline{% endif %}">
+                                        {% if match.winner_id == match.player2_id %}👑{% endif %}
+                                        {{ match.player2.username }}
+                                    </div>
+                                    {% set reg2 = match.player2.registrations|selectattr('tournament_id', 'equalto', tournament.id)|first %}
+                                    {% if reg2 and reg2.seed %}
+                                    <div class="text-xs text-mk-text-secondary">Seed #{{ reg2.seed }}</div>
+                                    {% endif %}
+                                </div>
+                                <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}" class="w-10 h-10 rounded-full">
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="mt-3 text-center text-xs">
+                            {% if match.status == 'scheduled' %}
+                            <span class="text-mk-text-secondary">⏱ Scheduled</span>
+                            {% elif match.status == 'pending_confirmation' %}
+                            <span class="text-yellow-500">⏳ Awaiting Confirmation</span>
+                            {% elif match.status == 'confirmed' %}
+                            <span class="text-green-500">✓ Confirmed</span>
+                            {% elif match.status == 'disputed' %}
+                            <span class="text-red-500">⚠️ Disputed</span>
+                            {% elif match.status == 'walkover' %}
+                            <span class="text-purple-500">🚫 Walkover - {{ match.winner.username }} wins</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Legend -->
+                <div class="mt-6 p-4 bg-mk-darkest rounded-lg text-xs text-mk-text-secondary">
+                    <strong class="text-mk-fire">Gauntlet Format:</strong>
+                    Lowest seed challenges up. Winner advances to face next higher seed until only the champion remains.
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

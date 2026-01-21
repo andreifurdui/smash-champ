@@ -13,6 +13,7 @@ from app.services.tournament import (
     unregister_user_from_tournament,
     calculate_standings,
     get_tournament_matches,
+    get_final_standings,
     TournamentError
 )
 from app.extensions import db
@@ -47,12 +48,24 @@ def detail(tournament_id):
 
     matches = get_tournament_matches(tournament_id, phase='group')
 
+    # Get playoff matches if tournament is in playoffs or completed
+    playoff_matches = []
+    if tournament.status in ['playoffs', 'completed']:
+        playoff_matches = get_tournament_matches(tournament_id, phase='playoff')
+
+    # Get final standings for completed tournaments
+    final_standings = None
+    if tournament.status == 'completed':
+        final_standings = get_final_standings(tournament_id)
+
     return render_template('tournament/detail.html',
                          tournament=tournament,
                          user_registration=user_registration,
                          players=players,
                          standings=standings,
-                         matches=matches)
+                         matches=matches,
+                         playoff_matches=playoff_matches,
+                         final_standings=final_standings)
 
 
 @bp.route('/<int:tournament_id>/register', methods=['POST'])
