@@ -1,6 +1,6 @@
 """Match score submission forms."""
 from flask_wtf import FlaskForm
-from wtforms import IntegerField, SubmitField
+from wtforms import IntegerField, SubmitField, HiddenField
 from wtforms.validators import DataRequired, NumberRange, ValidationError, Optional
 
 
@@ -36,6 +36,9 @@ class ScoreSubmissionForm(FlaskForm):
         Optional(),
         NumberRange(min=0, max=30, message='Score must be 0-30')
     ])
+
+    # Match format selection (for free matches)
+    match_format = HiddenField('Match Format', default='3')
 
     submit = SubmitField('Submit Score')
 

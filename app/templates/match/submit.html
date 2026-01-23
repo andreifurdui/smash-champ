@@ -40,7 +40,8 @@
         </div>
     </div>
 
-    <!-- Score Form -->
+    <!-- Score Form with Alpine.js for free match format toggle -->
+    <div {% if not match.tournament %}x-data="{ format: '3' }"{% endif %}>
     <form method="POST" class="space-y-6">
         {{ form.hidden_tag() }}
 
@@ -54,6 +55,28 @@
                 Your opponent will need to confirm this score. It will auto-confirm after 24 hours if not disputed.
             </p>
         </div>
+
+        {% if not match.tournament %}
+        <!-- Match Format Toggle (Free Matches Only) -->
+        <div class="mb-2">
+            <label class="block text-sm font-medium mb-3">Match Format</label>
+            <div class="flex gap-2">
+                <button type="button"
+                        @click="format = '1'"
+                        :class="format === '1' ? 'bg-mk-fire text-mk-dark' : 'bg-mk-darkest text-white hover:bg-mk-fire hover:text-mk-dark'"
+                        class="flex-1 py-3 px-4 font-bold rounded transition-colors">
+                    1 Set
+                </button>
+                <button type="button"
+                        @click="format = '3'"
+                        :class="format === '3' ? 'bg-mk-fire text-mk-dark' : 'bg-mk-darkest text-white hover:bg-mk-fire hover:text-mk-dark'"
+                        class="flex-1 py-3 px-4 font-bold rounded transition-colors">
+                    3 Sets
+                </button>
+            </div>
+            <input type="hidden" name="match_format" :value="format">
+        </div>
+        {% endif %}
 
         <!-- Set 1 -->
         <div class="card bg-mk-darker border-2 border-mk-fire">
@@ -76,6 +99,8 @@
             </div>
         </div>
 
+        {% if match.tournament %}
+        {# Tournament matches: use Jinja conditional based on tournament setting #}
         {% if sets_to_win == 2 %}
         <!-- Set 2 (only for best-of-3) -->
         <div class="card bg-mk-darker border-2 border-mk-fire">
@@ -119,6 +144,50 @@
             </div>
         </div>
         {% endif %}
+        {% else %}
+        {# Free matches: use Alpine.js to dynamically show/hide based on format selection #}
+        <!-- Set 2 (dynamically shown for 3-set format) -->
+        <div x-show="format === '3'" x-transition class="card bg-mk-darker border-2 border-mk-fire">
+            <h3 class="text-xl font-bold text-mk-fire mb-4">Set 2</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    {{ form.set2_player1.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set2_player1(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set2_player1.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set2_player1.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.set2_player2.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set2_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set2_player2.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set2_player2.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Set 3 (dynamically shown for 3-set format) -->
+        <div x-show="format === '3'" x-transition class="card bg-mk-darker border-2 border-mk-darkest">
+            <h3 class="text-xl font-bold mb-4">Set 3 <span class="text-sm text-mk-text-secondary font-normal">(if needed)</span></h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    {{ form.set3_player1.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set3_player1(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set3_player1.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set3_player1.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {{ form.set3_player2.label(class="block text-sm font-medium mb-2") }}
+                    {{ form.set3_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {% if form.set3_player2.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.set3_player2.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Buttons -->
         <div class="flex gap-4">
@@ -129,11 +198,19 @@
 
     <!-- Rules Reminder -->
     <div class="mt-8 text-center text-sm text-mk-text-secondary">
+        {% if match.tournament %}
+        {# Tournament matches: static text based on tournament setting #}
         {% if sets_to_win == 1 %}
         <p>Table Tennis Rules: First to 11 points, must win by 2 • Single set match</p>
         {% else %}
         <p>Table Tennis Rules: First to 11 points, must win by 2 • Best of 3 sets</p>
         {% endif %}
+        {% else %}
+        {# Free matches: dynamic text based on Alpine.js format selection #}
+        <p x-show="format === '1'">Table Tennis Rules: First to 11 points, must win by 2 • Single set match</p>
+        <p x-show="format === '3'">Table Tennis Rules: First to 11 points, must win by 2 • Best of 3 sets</p>
+        {% endif %}
     </div>
+    </div><!-- End Alpine.js wrapper -->
 </div>
 {% endblock %}

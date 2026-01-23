@@ -29,8 +29,16 @@ def submit(match_id):
         flash(f'Cannot submit score for match in {match.status} status', 'warning')
         return redirect(url_for('main.dashboard'))
 
-    # Free matches use best-of-3 (2 sets to win), tournament matches use tournament setting
-    sets_to_win = match.tournament.sets_to_win if match.tournament else 2
+    # For free matches, allow user to select format; tournament matches use tournament setting
+    if match.tournament:
+        sets_to_win = match.tournament.sets_to_win
+    else:
+        # Default to 3-set (2 sets to win), but allow 1-set selection
+        if request.method == 'POST':
+            sets_to_win = 1 if request.form.get('match_format') == '1' else 2
+        else:
+            sets_to_win = 2  # Default for GET (3-set = 2 sets to win)
+
     form = ScoreSubmissionForm(sets_to_win=sets_to_win)
 
     if form.validate_on_submit():
