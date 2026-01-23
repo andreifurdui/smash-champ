@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Free Matches{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-mk-fire mb-2">Free Matches</h1>
+            <p class="text-mk-text-secondary">Your ELO-rated matches outside tournaments</p>
+        </div>
+        <a href="{{ url_for('match.challenge') }}" class="btn-primary">New Challenge</a>
+    </div>
+
+    {% if matches %}
+    <div class="space-y-4">
+        {% for match in matches %}
+        <div class="card bg-mk-darker flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- Players -->
+            <div class="flex items-center gap-4 flex-1">
+                <!-- Player 1 -->
+                <div class="flex items-center gap-2">
+                    <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
+                         class="w-10 h-10 rounded-full border-2 {% if match.winner_id == match.player1_id %}border-green-500{% else %}border-mk-darkest{% endif %}">
+                    <span class="{% if match.winner_id == match.player1_id %}text-green-400 font-bold{% endif %}">
+                        {{ match.player1.username }}
+                    </span>
+                </div>
+
+                <span class="text-mk-text-secondary">vs</span>
+
+                <!-- Player 2 -->
+                <div class="flex items-center gap-2">
+                    <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
+                         class="w-10 h-10 rounded-full border-2 {% if match.winner_id == match.player2_id %}border-green-500{% else %}border-mk-darkest{% endif %}">
+                    <span class="{% if match.winner_id == match.player2_id %}text-green-400 font-bold{% endif %}">
+                        {{ match.player2.username }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Status Badge -->
+            <div class="flex items-center gap-3">
+                {% if match.status == 'scheduled' %}
+                    <span class="px-3 py-1 bg-blue-500 bg-opacity-20 text-blue-400 rounded-full text-sm">Scheduled</span>
+                    {% if current_user.id in [match.player1_id, match.player2_id] %}
+                        <a href="{{ url_for('match.submit', match_id=match.id) }}" class="btn-primary text-sm px-3 py-1">Submit Score</a>
+                    {% endif %}
+                {% elif match.status == 'pending_confirmation' %}
+                    <span class="px-3 py-1 bg-yellow-500 bg-opacity-20 text-yellow-400 rounded-full text-sm">Pending</span>
+                {% elif match.status == 'confirmed' %}
+                    <span class="px-3 py-1 bg-green-500 bg-opacity-20 text-green-400 rounded-full text-sm">Confirmed</span>
+                {% elif match.status == 'walkover' %}
+                    <span class="px-3 py-1 bg-orange-500 bg-opacity-20 text-orange-400 rounded-full text-sm">Walkover</span>
+                {% elif match.status == 'disputed' %}
+                    <span class="px-3 py-1 bg-red-500 bg-opacity-20 text-red-400 rounded-full text-sm">Disputed</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card bg-mk-darker text-center py-12">
+        <p class="text-mk-text-secondary mb-4">No free matches yet</p>
+        <a href="{{ url_for('match.challenge') }}" class="btn-primary">Challenge Someone</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Challenge a Player{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+
+    <!-- Page Header -->
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-mk-fire mb-2">Challenge a Player</h1>
+        <p class="text-mk-text-secondary">Create a free match to update your ELO rating</p>
+    </div>
+
+    <!-- Challenge Form -->
+    <form method="POST" class="card bg-mk-darker">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-6">
+            {{ form.opponent_id.label(class="block text-lg font-bold text-mk-fire mb-3") }}
+            {{ form.opponent_id(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mk-fire") }}
+            {% if form.opponent_id.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.opponent_id.errors[0] }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Info Box -->
+        <div class="bg-blue-500 bg-opacity-10 border border-blue-500 rounded-lg p-4 mb-6">
+            <div class="flex items-center gap-2 text-blue-400 font-bold mb-2">
+                <span>i</span>
+                <span>How it works</span>
+            </div>
+            <ul class="text-sm text-mk-text-secondary space-y-1">
+                <li>1. Create a challenge and play the match offline</li>
+                <li>2. Enter and submit the scores</li>
+                <li>3. Your opponent confirms the result</li>
+                <li>4. ELO ratings are updated for both players</li>
+            </ul>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-4">
+            <button type="submit" class="btn-primary flex-1">Create Challenge</button>
+            <a href="{{ url_for('main.dashboard') }}" class="btn-secondary flex-1 text-center">Cancel</a>
+        </div>
+    </form>
+
+    <!-- Free Matches Link -->
+    <div class="mt-6 text-center">
+        <a href="{{ url_for('match.free_matches') }}" class="text-mk-fire hover:underline">
+            View your free matches
+        </a>
+    </div>
+</div>
+{% endblock %}

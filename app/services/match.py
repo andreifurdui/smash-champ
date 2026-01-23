@@ -185,8 +185,8 @@ def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Ma
     if match.status != MatchStatus.SCHEDULED.value:
         raise ValueError(f'Cannot submit score for match in {match.status} status')
 
-    # Get tournament's sets_to_win setting
-    sets_to_win = match.tournament.sets_to_win
+    # Get tournament's sets_to_win setting (default 2 for free matches)
+    sets_to_win = match.tournament.sets_to_win if match.tournament else 2
 
     # Validate number of sets based on format
     if sets_to_win == 1:
@@ -275,8 +275,13 @@ def confirm_match_score(match_id: int, user_id: int) -> Match:
     match.confirmed_at = datetime.utcnow()
     match.played_at = datetime.utcnow()
 
-    # Update statistics
-    _update_match_statistics(match)
+    # Update statistics (skip for free matches)
+    if match.tournament_id is not None:
+        _update_match_statistics(match)
+
+    # Update ELO ratings
+    from app.services.elo import update_elo_ratings
+    update_elo_ratings(match)
 
     db.session.commit()
 
@@ -434,8 +439,13 @@ def forfeit_match(match_id: int, forfeiting_user_id: int, admin_override: bool =
     match.status = MatchStatus.WALKOVER.value
     match.played_at = datetime.utcnow()
 
-    # Update statistics (winner +2, loser +0, no sets/points)
-    _update_walkover_statistics(match, forfeiting_user_id)
+    # Update statistics (winner +2, loser +0, no sets/points) - skip for free matches
+    if match.tournament_id is not None:
+        _update_walkover_statistics(match, forfeiting_user_id)
+
+    # Update ELO ratings
+    from app.services.elo import update_elo_ratings
+    update_elo_ratings(match)
 
     db.session.commit()
 
@@ -560,8 +570,13 @@ def admin_set_match_score(match_id: int, sets_data: list[dict], winner_id: int) 
     match.confirmed_at = datetime.utcnow()
     match.played_at = datetime.utcnow()
 
-    # Update statistics (reuse existing helper)
-    _update_match_statistics(match)
+    # Update statistics (reuse existing helper) - skip for free matches
+    if match.tournament_id is not None:
+        _update_match_statistics(match)
+
+    # Update ELO ratings
+    from app.services.elo import update_elo_ratings
+    update_elo_ratings(match)
 
     db.session.commit()
 
@@ -571,3 +586,68 @@ def admin_set_match_score(match_id: int, sets_data: list[dict], winner_id: int) 
         advance_playoff_winner(match.id)
 
     return match
+
+
+def create_free_match(challenger_id: int, opponent_id: int) -> Match:
+    """
+    Create a free match (challenge) between two users.
+
+    Args:
+        challenger_id: User ID of the challenger
+        opponent_id: User ID of the opponent
+
+    Returns:
+        Created Match object
+
+    Raises:
+        ValueError: If validation fails
+    """
+    if challenger_id == opponent_id:
+        raise ValueError('You cannot challenge yourself')
+
+    # Verify both users exist
+    challenger = User.query.get(challenger_id)
+    opponent = User.query.get(opponent_id)
+
+    if not challenger or not opponent:
+        raise ValueError('User not found')
+
+    # Create free match
+    match = Match(
+        tournament_id=None,
+        player1_id=challenger_id,
+        player2_id=opponent_id,
+        phase=MatchPhase.FREE.value,
+        status=MatchStatus.SCHEDULED.value
+    )
+
+    db.session.add(match)
+    db.session.commit()
+
+    return match
+
+
+def get_user_free_matches(user_id: int, status: Optional[str] = None, limit: int = 20) -> List[Match]:
+    """
+    Get free matches for a user.
+
+    Args:
+        user_id: User ID
+        status: Optional status filter (e.g., 'scheduled', 'pending_confirmation')
+        limit: Maximum number of matches to return
+
+    Returns:
+        List of Match objects
+    """
+    query = Match.query.filter(
+        Match.tournament_id.is_(None),
+        or_(Match.player1_id == user_id, Match.player2_id == user_id)
+    )
+
+    if status:
+        query = query.filter(Match.status == status)
+
+    return query.options(
+        db.joinedload(Match.player1),
+        db.joinedload(Match.player2)
+    ).order_by(Match.created_at.desc()).limit(limit).all()

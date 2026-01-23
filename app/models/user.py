@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     avatar_path = db.Column(db.String(256), nullable=True)
     _tagline = db.Column('tagline', db.String(100), nullable=True)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    elo_rating = db.Column(db.Integer, default=1200, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

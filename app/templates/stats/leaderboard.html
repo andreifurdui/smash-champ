@@ -3,7 +3,7 @@
 {% block title %}Leaderboard - .smash{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto" x-data="{ tab: 'elo' }">
     <!-- Hero Header -->
     <div class="mb-8 text-center">
         <h1 class="text-4xl font-black mb-2">
@@ -12,8 +12,73 @@
         <p class="text-mk-text-secondary">All-time greatest players</p>
     </div>
 
-    <!-- Leaderboard Table -->
-    <div class="card mb-8">
+    <!-- Tab Navigation -->
+    <div class="flex gap-2 mb-6">
+        <button @click="tab = 'elo'"
+                :class="tab === 'elo' ? 'bg-mk-fire text-mk-dark' : 'bg-mk-darker text-mk-text-secondary hover:text-white'"
+                class="px-6 py-2 rounded-lg font-bold transition-colors">
+            ELO Rankings
+        </button>
+        <button @click="tab = 'wins'"
+                :class="tab === 'wins' ? 'bg-mk-fire text-mk-dark' : 'bg-mk-darker text-mk-text-secondary hover:text-white'"
+                class="px-6 py-2 rounded-lg font-bold transition-colors">
+            Win Count
+        </button>
+    </div>
+
+    <!-- ELO Rankings Tab -->
+    <div x-show="tab === 'elo'" class="card mb-8">
+        <h2 class="text-2xl font-bold mb-4 text-mk-fire">ELO Rankings</h2>
+
+        {% if elo_leaderboard %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-mk-darkest">
+                        <th class="text-left py-3 px-4">Rank</th>
+                        <th class="text-left py-3 px-4">Player</th>
+                        <th class="text-center py-3 px-4">ELO Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in elo_leaderboard %}
+                    <tr class="border-b border-mk-darkest {% if entry.user.id == current_user.id %}bg-mk-fire bg-opacity-10{% endif %}">
+                        <td class="py-3 px-4">
+                            {% if entry.rank <= 3 %}
+                                <span class="text-2xl">
+                                    {% if entry.rank == 1 %}🥇
+                                    {% elif entry.rank == 2 %}🥈
+                                    {% else %}🥉
+                                    {% endif %}
+                                </span>
+                            {% else %}
+                                <span class="text-mk-text-secondary">#{{ entry.rank }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-2">
+                                <img src="{{ entry.user.avatar }}" class="w-8 h-8 rounded-full">
+                                <a href="{{ url_for('stats.user_stats', user_id=entry.user.id) }}"
+                                   class="font-semibold hover:text-mk-fire">
+                                    {{ entry.user.username }}
+                                </a>
+                            </div>
+                        </td>
+                        <td class="text-center py-3 px-4">
+                            <span class="text-mk-fire font-bold text-lg">{{ entry.elo_rating }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-mk-text-secondary py-8">No matches played yet</p>
+        {% endif %}
+    </div>
+
+    <!-- Win Count Tab -->
+    <div x-show="tab === 'wins'" class="card mb-8">
         <h2 class="text-2xl font-bold mb-4 text-mk-fire">All-Time Leaderboard</h2>
 
         {% if leaderboard %}
@@ -23,6 +88,7 @@
                     <tr class="border-b border-mk-darkest">
                         <th class="text-left py-3 px-4">Rank</th>
                         <th class="text-left py-3 px-4">Player</th>
+                        <th class="text-center py-3 px-4">ELO</th>
                         <th class="text-center py-3 px-4">Wins</th>
                         <th class="text-center py-3 px-4">Losses</th>
                         <th class="text-center py-3 px-4">Win Rate</th>
@@ -52,6 +118,7 @@
                                 </a>
                             </div>
                         </td>
+                        <td class="text-center py-3 px-4 text-mk-fire font-bold">{{ entry.user.elo_rating }}</td>
                         <td class="text-center py-3 px-4 text-green-500 font-bold">{{ entry.wins }}</td>
                         <td class="text-center py-3 px-4 text-red-500">{{ entry.losses }}</td>
                         <td class="text-center py-3 px-4 text-mk-fire font-bold">{{ entry.win_rate }}%</td>

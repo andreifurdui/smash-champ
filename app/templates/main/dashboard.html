@@ -3,7 +3,7 @@
 {% block title %}Dashboard - .smash{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-6xl mx-auto">
     <!-- Welcome Header -->
     <div class="mb-8">
         <h1 class="text-4xl font-bold mb-2">
@@ -146,7 +146,7 @@
                                 <img src="{{ match.get_opponent(current_user.id).avatar }}" class="w-8 h-8 rounded-full">
                                 <span class="font-semibold">vs {{ match.get_opponent(current_user.id).username }}</span>
                             </div>
-                            <span class="text-xs text-mk-text-secondary">{{ match.tournament.name }}</span>
+                            <span class="text-xs text-mk-text-secondary">{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
                         </div>
 
                         <!-- Set Scores -->
@@ -194,10 +194,13 @@
                         <div class="flex items-center gap-2 flex-1">
                             <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
                                  class="w-8 h-8 rounded-full">
-                            <span class="{% if match.player1_id == current_user.id %}font-bold{% endif %}
-                                         {% if match.winner_id == match.player1_id %}text-green-500{% else %}text-red-500{% endif %}">
-                                {{ match.player1.username }}
-                            </span>
+                            <div>
+                                <div class="{% if match.player1_id == current_user.id %}font-bold{% endif %}
+                                            {% if match.winner_id == match.player1_id %}text-green-500{% else %}text-red-500{% endif %}">
+                                    {{ match.player1.username }}
+                                </div>
+                                <div class="text-xs text-mk-fire">{{ match.player1.elo_rating }}</div>
+                            </div>
                         </div>
 
                         <!-- Score Display -->
@@ -206,9 +209,9 @@
                             <span class="text-purple-500 font-semibold">W/O</span>
                         </div>
                         {% else %}
-                        <div class="flex items-center gap-2 font-mono text-sm">
+                        <div class="flex flex-col gap-1 font-mono text-sm">
                             {% for set_score in match.set_scores|sort(attribute='set_number') %}
-                            <span class="px-2 py-1 bg-mk-darkest rounded">
+                            <span class="px-2 py-1 bg-mk-darkest rounded text-center">
                                 <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% endif %}">{{ set_score.player1_score }}</span>
                                 <span class="text-mk-text-secondary">-</span>
                                 <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% endif %}">{{ set_score.player2_score }}</span>
@@ -218,11 +221,14 @@
                         {% endif %}
 
                         <!-- Player 2 -->
-                        <div class="flex items-center gap-2 flex-1 justify-end">
-                            <span class="{% if match.player2_id == current_user.id %}font-bold{% endif %}
-                                         {% if match.winner_id == match.player2_id %}text-green-500{% else %}text-red-500{% endif %}">
-                                {{ match.player2.username }}
-                            </span>
+                        <div class="flex items-center gap-2 flex-1 justify-end text-right">
+                            <div>
+                                <div class="{% if match.player2_id == current_user.id %}font-bold{% endif %}
+                                            {% if match.winner_id == match.player2_id %}text-green-500{% else %}text-red-500{% endif %}">
+                                    {{ match.player2.username }}
+                                </div>
+                                <div class="text-xs text-mk-fire">{{ match.player2.elo_rating }}</div>
+                            </div>
                             <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
                                  class="w-8 h-8 rounded-full">
                         </div>
@@ -230,8 +236,16 @@
 
                     <!-- Match Details -->
                     <div class="flex justify-between text-xs text-mk-text-secondary mt-2">
-                        <span>{{ match.tournament.name }}</span>
-                        <span>{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
+                        <span>{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
+                        <span>
+                            {{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}
+                            {% if elo_by_match.get(match.id) %}
+                                {% set change = elo_by_match[match.id] %}
+                                <span class="{% if change > 0 %}text-green-500{% else %}text-red-500{% endif %} font-bold ml-2">
+                                    {{ '+' if change > 0 else '' }}{{ change }}
+                                </span>
+                            {% endif %}
+                        </span>
                     </div>
 
                     <!-- Walkover indicator -->
@@ -260,6 +274,20 @@
             <h2 class="text-2xl font-bold mb-6">
                 <span class="text-mk-fire">📈</span> Your Stats
             </h2>
+
+            <!-- ELO Rating (always shown) -->
+            <div class="mb-6 p-4 bg-gradient-to-r from-mk-fire/20 to-mk-darker rounded-lg border border-mk-fire">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-mk-text-secondary mb-1">ELO Rating</div>
+                        <div class="text-4xl font-black text-mk-fire">{{ elo_rating }}</div>
+                    </div>
+                    <a href="{{ url_for('match.challenge') }}"
+                       class="btn-primary text-sm px-4 py-2">
+                        Challenge Player
+                    </a>
+                </div>
+            </div>
 
             {% if stats.total > 0 %}
             <!-- Stats Grid -->
@@ -337,16 +365,18 @@
 
                         <!-- Opponent Info -->
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                <span class="font-bold text-lg">{{ current_user.username }}</span>
+                            <div class="flex items-center justify-center gap-3 mb-1">
+                                <div class="text-center">
+                                    <div class="font-bold text-lg">{{ current_user.username }}</div>
+                                    <div class="text-xs text-mk-fire">({{ current_user.elo_rating }})</div>
+                                </div>
                                 <span class="px-2 py-0.5 bg-mk-fire text-mk-dark font-black text-xs rounded">VS</span>
-                                <span class="font-bold text-lg">{{ opponent.username }}</span>
-                                {% if loop.first %}
-                                <span class="text-xs text-mk-fire ml-1">Recommended</span>
-                                {% endif %}
+                                <div class="text-center">
+                                    <div class="font-bold text-lg">{{ opponent.username }}</div>
+                                    <div class="text-xs text-mk-fire">({{ opponent.elo_rating }})</div>
+                                </div>
                             </div>
-                            <div class="text-xs text-mk-text-secondary">"{{ opponent.tagline }}"</div>
-                            <div class="text-xs text-mk-text-secondary mt-1">
+                            <div class="text-xs text-mk-text-secondary mt-1 text-center">
                                 {{ match.tournament.name }} · <span class="text-mk-fire">{{ match.phase|upper }}</span>
                             </div>
                         </div>
@@ -391,8 +421,9 @@
             <span class="text-mk-fire">🔥</span> Latest Matches
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             {% for match in global_activity[:3] %}
+            {% set match_elo = global_elo_by_match.get(match.id, {}) %}
             <div class="bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
                 <!-- Players -->
                 <div class="flex items-center justify-between mb-2">
@@ -402,6 +433,9 @@
                              class="w-8 h-8 rounded-full">
                         <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-semibold{% else %}text-red-500{% endif %}">
                             {{ match.player1.username }}
+                            {% if match_elo.get(match.player1_id) %}
+                                <span class="text-xs {% if match_elo[match.player1_id] > 0 %}text-green-500{% else %}text-red-500{% endif %}">({{ '+' if match_elo[match.player1_id] > 0 else '' }}{{ match_elo[match.player1_id] }})</span>
+                            {% endif %}
                         </span>
                     </div>
 
@@ -411,9 +445,9 @@
                         <span class="text-purple-500 font-semibold">W/O</span>
                     </div>
                     {% else %}
-                    <div class="flex items-center gap-2 font-mono text-sm">
+                    <div class="flex flex-col gap-1 font-mono text-sm">
                         {% for set_score in match.set_scores|sort(attribute='set_number') %}
-                        <span class="px-2 py-1 bg-mk-darkest rounded">
+                        <span class="px-2 py-1 bg-mk-darkest rounded text-center">
                             <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% endif %}">{{ set_score.player1_score }}</span>
                             <span class="text-mk-text-secondary">-</span>
                             <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% endif %}">{{ set_score.player2_score }}</span>
@@ -426,6 +460,9 @@
                     <div class="flex items-center gap-2 flex-1 justify-end">
                         <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-semibold{% else %}text-red-500{% endif %}">
                             {{ match.player2.username }}
+                            {% if match_elo.get(match.player2_id) %}
+                                <span class="text-xs {% if match_elo[match.player2_id] > 0 %}text-green-500{% else %}text-red-500{% endif %}">({{ '+' if match_elo[match.player2_id] > 0 else '' }}{{ match_elo[match.player2_id] }})</span>
+                            {% endif %}
                         </span>
                         <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
                              class="w-8 h-8 rounded-full">
@@ -434,7 +471,7 @@
 
                 <!-- Match Details -->
                 <div class="flex justify-between text-xs text-mk-text-secondary mt-2">
-                    <span>{{ match.tournament.name }}</span>
+                    <span>{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
                     <span>{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
                 </div>
 

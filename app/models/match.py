@@ -8,6 +8,7 @@ class MatchPhase(str, Enum):
     """Match phase enum."""
     GROUP = 'group'
     PLAYOFF = 'playoff'
+    FREE = 'free'
 
 
 class MatchStatus(str, Enum):
@@ -25,7 +26,7 @@ class Match(db.Model):
     __tablename__ = 'matches'
 
     id = db.Column(db.Integer, primary_key=True)
-    tournament_id = db.Column(db.Integer, db.ForeignKey('tournaments.id'), nullable=False)
+    tournament_id = db.Column(db.Integer, db.ForeignKey('tournaments.id'), nullable=True)
     player1_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     player2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
@@ -71,6 +72,11 @@ class Match(db.Model):
     def is_playoff_match(self):
         """Check if this is a playoff match."""
         return self.phase == MatchPhase.PLAYOFF.value
+
+    @property
+    def is_free_match(self):
+        """Check if this is a free match (outside tournaments)."""
+        return self.tournament_id is None
 
     @property
     def is_pending_confirmation(self):

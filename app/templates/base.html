@@ -54,6 +54,9 @@
                         <a href="{{ url_for('stats.leaderboard') }}" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
                             Stats
                         </a>
+                        <a href="{{ url_for('match.challenge') }}" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
+                            Challenge
+                        </a>
                         {% if current_user.is_admin %}
                         <a href="{{ url_for('admin.dashboard') }}" class="nav-link inline-flex items-center px-1 pt-1 text-sm font-medium">
                             Admin
