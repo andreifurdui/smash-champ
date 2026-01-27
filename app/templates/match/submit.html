@@ -152,14 +152,14 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     {{ form.set2_player1.label(class="block text-sm font-medium mb-2") }}
-                    {{ form.set2_player1(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {{ form.set2_player1(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0", **{'x-bind:disabled': "format === '1'"}) }}
                     {% if form.set2_player1.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ form.set2_player1.errors[0] }}</p>
                     {% endif %}
                 </div>
                 <div>
                     {{ form.set2_player2.label(class="block text-sm font-medium mb-2") }}
-                    {{ form.set2_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {{ form.set2_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0", **{'x-bind:disabled': "format === '1'"}) }}
                     {% if form.set2_player2.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ form.set2_player2.errors[0] }}</p>
                     {% endif %}
@@ -173,14 +173,14 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     {{ form.set3_player1.label(class="block text-sm font-medium mb-2") }}
-                    {{ form.set3_player1(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {{ form.set3_player1(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0", **{'x-bind:disabled': "format === '1'"}) }}
                     {% if form.set3_player1.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ form.set3_player1.errors[0] }}</p>
                     {% endif %}
                 </div>
                 <div>
                     {{ form.set3_player2.label(class="block text-sm font-medium mb-2") }}
-                    {{ form.set3_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0") }}
+                    {{ form.set3_player2(class="w-full bg-mk-darkest border border-mk-darkest rounded px-4 py-3 text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-mk-fire", placeholder="0", **{'x-bind:disabled': "format === '1'"}) }}
                     {% if form.set3_player2.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ form.set3_player2.errors[0] }}</p>
                     {% endif %}
