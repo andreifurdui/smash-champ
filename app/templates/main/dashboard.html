@@ -12,6 +12,12 @@
         <p class="text-mk-text-secondary italic">"{{ current_user.tagline }}"</p>
     </div>
 
+    <!-- Challenge Player Button (Prominent) -->
+    <a href="{{ url_for('match.challenge') }}"
+       class="block w-full text-center px-6 py-4 mb-6 bg-gradient-to-r from-mk-fire to-orange-600 hover:from-orange-500 hover:to-mk-fire text-mk-dark font-black text-lg rounded-lg transition-all hover:shadow-lg hover:shadow-mk-fire/30">
+        Challenge a Player
+    </a>
+
     <!-- Dashboard Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Stats Card -->
@@ -27,10 +33,12 @@
                         <div class="text-xs text-mk-text-secondary mb-1">ELO Rating</div>
                         <div class="text-4xl font-black text-mk-fire">{{ elo_rating }}</div>
                     </div>
-                    <a href="{{ url_for('match.challenge') }}"
-                       class="btn-primary text-sm px-4 py-2">
-                        Challenge Player
-                    </a>
+                    <div class="text-right">
+                        <div class="text-xs text-mk-text-secondary mb-1">This Week</div>
+                        <div class="text-2xl font-bold {% if weekly_elo_change > 0 %}text-green-500{% elif weekly_elo_change < 0 %}text-red-500{% else %}text-mk-text-secondary{% endif %}">
+                            {{ '+' if weekly_elo_change > 0 else '' }}{{ weekly_elo_change }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -78,6 +86,44 @@
                     View Full Stats →
                 </a>
             </div>
+
+            <!-- ELO History Chart -->
+            {% if elo_history and elo_history|length > 1 %}
+            <div class="mt-6 pt-6 border-t border-mk-darkest">
+                <h3 class="text-sm font-bold text-mk-text-secondary mb-3">ELO History</h3>
+                <div class="bg-mk-darker rounded-lg p-3" style="height: 150px;">
+                    <canvas id="eloChart"></canvas>
+                </div>
+            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('eloChart');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ elo_history|map(attribute='date')|list|tojson }},
+                        datasets: [{
+                            data: {{ elo_history|map(attribute='rating')|list|tojson }},
+                            borderColor: '#F97316',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: '#262626' }, ticks: { color: '#A3A3A3', font: { size: 10 } } },
+                            y: { grid: { color: '#262626' }, ticks: { color: '#A3A3A3', font: { size: 10 } } }
+                        }
+                    }
+                });
+            });
+            </script>
+            {% endif %}
             {% else %}
             <!-- Empty State -->
             <div class="text-center py-12">
@@ -146,18 +192,25 @@
                         </div>
                     </div>
 
-                    <!-- Match Details -->
-                    <div class="flex justify-between text-xs text-mk-text-secondary mt-2">
-                        <span>{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
-                        <span>
-                            {{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}
-                            {% if elo_by_match.get(match.id) %}
-                                {% set change = elo_by_match[match.id] %}
-                                <span class="{% if change > 0 %}text-green-500{% else %}text-red-500{% endif %} font-bold ml-2">
-                                    {{ '+' if change > 0 else '' }}{{ change }}
-                                </span>
-                            {% endif %}
+                    <!-- Match Details with ELO in center -->
+                    <div class="flex items-center text-xs text-mk-text-secondary mt-2">
+                        <span class="flex-1">{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
+
+                        <!-- ELO Changes (center) -->
+                        {% set match_elo = elo_by_match.get(match.id, {}) %}
+                        {% if match_elo %}
+                        <span class="text-sm font-bold">
+                            <span class="{% if match_elo.get(match.player1_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                                {{ '+' if match_elo.get(match.player1_id, 0) > 0 else '' }}{{ match_elo.get(match.player1_id, 0) }}
+                            </span>
+                            <span class="text-mk-text-secondary mx-1">/</span>
+                            <span class="{% if match_elo.get(match.player2_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                                {{ '+' if match_elo.get(match.player2_id, 0) > 0 else '' }}{{ match_elo.get(match.player2_id, 0) }}
+                            </span>
                         </span>
+                        {% endif %}
+
+                        <span class="flex-1 text-right">{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
                     </div>
 
                     <!-- Walkover indicator -->
@@ -181,11 +234,37 @@
             {% endif %}
         </div>
 
-        <!-- Active Tournament Card -->
+        <!-- Leaderboard & Tournament Card -->
         <div class="card">
             <h2 class="text-2xl font-bold mb-6">
-                <span class="text-mk-fire">🏆</span> Your Tournaments
+                <span class="text-mk-fire">🏆</span> Leaderboard & Tournaments
             </h2>
+
+            <!-- Top 5 ELO Leaderboard -->
+            {% if elo_leaderboard %}
+            <div class="mb-6 pb-6 border-b border-mk-darkest">
+                <h3 class="text-sm font-bold text-mk-text-secondary mb-3">Top 5 ELO Rankings</h3>
+                <div class="space-y-2">
+                    {% for entry in elo_leaderboard %}
+                    <div class="flex items-center justify-between p-2 rounded-lg {% if entry.user.id == current_user.id %}bg-mk-fire bg-opacity-10 border border-mk-fire{% else %}bg-mk-darker{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 text-center font-bold">
+                                {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% else %}{{ entry.rank }}.{% endif %}
+                            </span>
+                            <img src="{{ entry.user.avatar }}" alt="{{ entry.user.username }}" class="w-8 h-8 rounded-full">
+                            <span class="{% if entry.user.id == current_user.id %}text-mk-fire font-bold{% endif %}">{{ entry.user.username }}</span>
+                        </div>
+                        <span class="text-mk-fire font-bold">{{ entry.elo_rating }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('stats.leaderboard') }}" class="text-mk-fire hover:text-mk-fire-light text-sm font-semibold">
+                        View Full Leaderboard →
+                    </a>
+                </div>
+            </div>
+            {% endif %}
 
             {% set active = active_tournaments.in_progress %}
             {% set registered = active_tournaments.registered %}
@@ -357,29 +436,35 @@
                 {% for match in upcoming_matches %}
                 {% set opponent = match.get_opponent(current_user.id) %}
                 <div class="bg-gradient-to-r from-mk-darkest to-mk-darker border {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} rounded-lg p-5 hover:border-mk-fire transition-colors">
-                    <!-- Row 1: Opponent Info -->
-                    <div class="flex items-center gap-4">
-                        <!-- Opponent Avatar -->
-                        <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
-                             class="w-16 h-16 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %} flex-shrink-0">
-
-                        <!-- Opponent Info -->
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-center gap-3 mb-1">
-                                <div class="text-center">
-                                    <div class="font-bold text-lg">{{ current_user.username }}</div>
-                                    <div class="text-xs text-mk-fire">({{ current_user.elo_rating }})</div>
-                                </div>
-                                <span class="px-2 py-0.5 bg-mk-fire text-mk-dark font-black text-xs rounded">VS</span>
-                                <div class="text-center">
-                                    <div class="font-bold text-lg">{{ opponent.username }}</div>
-                                    <div class="text-xs text-mk-fire">({{ opponent.elo_rating }})</div>
-                                </div>
-                            </div>
-                            <div class="text-xs text-mk-text-secondary mt-1 text-center">
-                                {{ match.tournament.name }} · <span class="text-mk-fire">{{ match.phase|upper }}</span>
+                    <!-- Row 1: Both Players with Avatars -->
+                    <div class="flex items-center justify-between">
+                        <!-- Current User -->
+                        <div class="flex items-center gap-3 flex-1">
+                            <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}"
+                                 class="w-12 h-12 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
+                            <div>
+                                <div class="font-bold">{{ current_user.username }}</div>
+                                <div class="text-xs text-mk-fire">{{ current_user.elo_rating }}</div>
                             </div>
                         </div>
+
+                        <!-- VS Badge -->
+                        <div class="px-3 py-1 bg-mk-fire text-mk-dark font-black text-sm rounded">VS</div>
+
+                        <!-- Opponent -->
+                        <div class="flex items-center gap-3 flex-1 justify-end text-right">
+                            <div>
+                                <div class="font-bold">{{ opponent.username }}</div>
+                                <div class="text-xs text-mk-fire">{{ opponent.elo_rating }}</div>
+                            </div>
+                            <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
+                                 class="w-12 h-12 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
+                        </div>
+                    </div>
+
+                    <!-- Tournament Info -->
+                    <div class="text-xs text-mk-text-secondary mt-3 text-center">
+                        {% if match.tournament %}{{ match.tournament.name }} · <span class="text-mk-fire">{{ match.phase|upper }}</span>{% else %}Free Match{% endif %}
                     </div>
 
                     <!-- Row 2: Action Buttons -->
