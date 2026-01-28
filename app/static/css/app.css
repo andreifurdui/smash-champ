@@ -1,5 +1,10 @@
 /* .smash - Mortal Kombat Theme Custom Styles */
 
+/* ==================== Alpine.js ==================== */
+[x-cloak] {
+    display: none !important;
+}
+
 /* ==================== Flash Messages ==================== */
 .flash-success {
     background-color: rgba(34, 197, 94, 0.1);
