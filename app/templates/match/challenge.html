@@ -12,12 +12,54 @@
     </div>
 
     <!-- Challenge Form -->
-    <form method="POST" class="card bg-mk-darker">
+    <form method="POST" class="card bg-mk-darker" x-data="{ selectedOpponent: {{ preselected_opponent_id or 'null' }} }">
         {{ form.hidden_tag() }}
 
         <div class="mb-6">
-            {{ form.opponent_id.label(class="block text-lg font-bold text-mk-fire mb-3") }}
-            {{ form.opponent_id(class="w-full bg-mk-darkest border border-mk-fire rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mk-fire") }}
+            <label class="block text-lg font-bold text-mk-fire mb-3">Select Opponent</label>
+
+            <!-- Opponent Cards -->
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+                {% for user in users %}
+                <label class="block cursor-pointer">
+                    <input type="radio" name="opponent_id" value="{{ user.id }}"
+                           class="sr-only peer"
+                           {% if preselected_opponent_id == user.id %}checked{% endif %}
+                           x-on:change="selectedOpponent = {{ user.id }}">
+                    <div class="flex items-center gap-4 p-4 bg-mk-darkest border-2 rounded-lg transition-all
+                                peer-checked:border-mk-fire peer-checked:bg-mk-fire peer-checked:bg-opacity-10
+                                hover:border-mk-fire hover:border-opacity-50">
+                        <!-- Avatar -->
+                        <img src="{{ user.avatar }}" alt="{{ user.username }}" class="w-12 h-12 rounded-full">
+
+                        <!-- User Info -->
+                        <div class="flex-1">
+                            <div class="font-bold">{{ user.username }}</div>
+                            <div class="text-sm text-mk-fire">{{ user.elo_rating }} ELO</div>
+                        </div>
+
+                        <!-- H2H Record (if played before) -->
+                        {% if user.id in h2h_data %}
+                        {% set h2h = h2h_data[user.id] %}
+                        <div class="text-right">
+                            <div class="text-xs text-mk-text-secondary">H2H Record</div>
+                            <div class="font-bold">
+                                <span class="{% if h2h.wins > h2h.losses %}text-green-500{% elif h2h.wins < h2h.losses %}text-red-500{% else %}text-mk-text-secondary{% endif %}">
+                                    {{ h2h.wins }}-{{ h2h.losses }}
+                                </span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-right">
+                            <div class="text-xs text-mk-text-secondary">H2H Record</div>
+                            <div class="text-sm text-mk-text-secondary italic">Never played</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
             {% if form.opponent_id.errors %}
                 <p class="text-red-500 text-sm mt-1">{{ form.opponent_id.errors[0] }}</p>
             {% endif %}

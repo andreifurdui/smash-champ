@@ -143,11 +143,27 @@ def forfeit(match_id):
 @login_required
 def challenge():
     """Challenge another player to a free match."""
+    from app.services.stats import get_head_to_head
+
     form = ChallengeForm()
 
     # Get all users except current user for opponent selection
     users = User.query.filter(User.id != current_user.id).order_by(User.username).all()
     form.opponent_id.choices = [(u.id, u.username) for u in users]
+
+    # Get H2H data for each potential opponent
+    h2h_data = {}
+    for user in users:
+        h2h = get_head_to_head(current_user.id, user.id)
+        if h2h['total_matches'] > 0:
+            h2h_data[user.id] = {
+                'wins': h2h['user1_wins'],
+                'losses': h2h['user2_wins'],
+                'total': h2h['total_matches']
+            }
+
+    # Get pre-selected opponent from query param
+    preselected_opponent_id = request.args.get('opponent_id', type=int)
 
     if form.validate_on_submit():
         try:
@@ -160,7 +176,11 @@ def challenge():
             db.session.rollback()
             flash(f'An error occurred: {str(e)}', 'error')
 
-    return render_template('match/challenge.html', form=form)
+    return render_template('match/challenge.html',
+                          form=form,
+                          users=users,
+                          h2h_data=h2h_data,
+                          preselected_opponent_id=preselected_opponent_id)
 
 
 @bp.route('/free')
