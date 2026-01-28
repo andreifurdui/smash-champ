@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from app.services import match, tournament
 from app.services.elo import get_elo_leaderboard, get_user_elo_history
+from app.services.stats import get_user_streak
 from app.models import User, MatchStatus, EloHistory
 
 
@@ -96,5 +97,6 @@ def get_dashboard_data(user_id: int) -> dict:
         'global_elo_by_match': global_elo_by_match,
         'elo_leaderboard': get_elo_leaderboard(limit=5),
         'elo_history': elo_history,
-        'weekly_elo_change': weekly_elo_change
+        'weekly_elo_change': weekly_elo_change,
+        'current_streak': get_user_streak(user_id)
     }

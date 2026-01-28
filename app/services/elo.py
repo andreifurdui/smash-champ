@@ -155,15 +155,18 @@ def get_elo_leaderboard(limit: int = 50) -> list[dict]:
     """
     Get ELO leaderboard sorted by rating.
 
-    Returns list of dicts with user, elo_rating, and rank.
+    Returns list of dicts with user, elo_rating, rank, and streak.
     """
+    from app.services.stats import get_user_streak
+
     users = User.query.order_by(User.elo_rating.desc()).limit(limit).all()
 
     return [
         {
             'user': user,
             'elo_rating': user.elo_rating,
-            'rank': idx + 1
+            'rank': idx + 1,
+            'streak': get_user_streak(user.id)
         }
         for idx, user in enumerate(users)
     ]

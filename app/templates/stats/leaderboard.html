@@ -62,6 +62,9 @@
                                    class="font-semibold hover:text-mk-fire">
                                     {{ entry.user.username }}
                                 </a>
+                                {% if entry.streak and entry.streak.type == 'win' and entry.streak.count >= 3 %}
+                                    <span class="ml-1" title="{{ entry.streak.count }} win streak">🔥</span>
+                                {% endif %}
                             </div>
                         </td>
                         <td class="text-center py-3 px-4">

@@ -4,6 +4,52 @@ from app.extensions import db
 from app.models import User, Match, Tournament, Registration, TournamentWinner, MatchStatus, SetScore
 
 
+def get_user_streak(user_id: int) -> dict:
+    """
+    Calculate current win/loss streak for user.
+
+    Only includes CONFIRMED matches (walkovers excluded - only real games count).
+
+    Returns:
+        {
+            'type': 'win' | 'loss' | None,
+            'count': int,
+            'matches': [Match]  # matches in streak
+        }
+    """
+    # Get recent confirmed matches (exclude walkovers)
+    matches = Match.query.filter(
+        Match.status == MatchStatus.CONFIRMED.value,
+        or_(Match.player1_id == user_id, Match.player2_id == user_id)
+    ).options(
+        db.joinedload(Match.player1),
+        db.joinedload(Match.player2)
+    ).order_by(Match.played_at.desc()).limit(20).all()
+
+    if not matches:
+        return {'type': None, 'count': 0, 'matches': []}
+
+    # Determine streak type from most recent match
+    first_match = matches[0]
+    is_win = first_match.winner_id == user_id
+    streak_type = 'win' if is_win else 'loss'
+
+    # Count consecutive matches of same result
+    streak_matches = []
+    for match in matches:
+        match_is_win = match.winner_id == user_id
+        if match_is_win == is_win:
+            streak_matches.append(match)
+        else:
+            break
+
+    return {
+        'type': streak_type,
+        'count': len(streak_matches),
+        'matches': streak_matches
+    }
+
+
 def get_global_leaderboard(limit: int = 50) -> list[dict]:
     """
     All-time leaderboard sorted by wins, then win rate.
