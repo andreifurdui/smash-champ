@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% from "components/user.html" import user_link, user_avatar, user_name %}
+
+{% block title %}Match Detail - .smash{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Back Navigation -->
+    <div class="mb-6">
+        <a href="{{ url_for('main.dashboard') }}" class="text-mk-text-secondary hover:text-mk-fire transition-colors">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Match Header Card -->
+    <div class="card mb-6">
+        <!-- Match Type Badge -->
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                {% if match.tournament %}
+                <span class="text-xs bg-mk-fire bg-opacity-20 border border-mk-fire text-mk-fire px-2 py-1 rounded">
+                    {{ match.tournament.name }} &middot; {{ match.phase|upper }}
+                </span>
+                {% else %}
+                <span class="text-xs bg-purple-500 bg-opacity-20 border border-purple-500 text-purple-500 px-2 py-1 rounded">
+                    FREE MATCH
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-xs text-mk-text-secondary">
+                {{ match.played_at.strftime('%B %d, %Y at %H:%M') if match.played_at else 'Not played yet' }}
+            </div>
+        </div>
+
+        <!-- VS Display -->
+        <div class="flex items-center justify-between py-6">
+            <!-- Player 1 -->
+            <div class="flex-1 text-center">
+                {{ user_avatar(match.player1, size='xlarge', border_class='border-4 ' + ('border-green-500' if match.winner_id == match.player1_id else ('border-red-500' if match.winner_id else 'border-mk-darkest')), extra_class='mx-auto') }}
+                <div class="mt-3">
+                    {{ user_name(match.player1, classes='text-xl font-bold hover:text-mk-fire transition-colors ' + ('text-green-500' if match.winner_id == match.player1_id else ('text-red-500' if match.winner_id else ''))) }}
+                </div>
+                <div class="text-sm text-mk-fire mt-1">{{ match.player1.elo_rating }} ELO</div>
+                {% if elo_changes.get(match.player1_id) %}
+                <div class="text-sm font-bold mt-1 {% if elo_changes[match.player1_id] > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                    {{ '+' if elo_changes[match.player1_id] > 0 else '' }}{{ elo_changes[match.player1_id] }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- VS Badge & Score -->
+            <div class="px-6">
+                {% if match.status == 'walkover' %}
+                <div class="px-6 py-3 bg-purple-500 bg-opacity-20 border border-purple-500 rounded-lg text-center">
+                    <div class="text-2xl font-black text-purple-500">W/O</div>
+                    <div class="text-xs text-purple-400 mt-1">Walkover</div>
+                </div>
+                {% elif match.set_scores|list|length > 0 %}
+                <div class="space-y-2">
+                    {% for set_score in match.set_scores|sort(attribute='set_number') %}
+                    <div class="flex items-center gap-3 font-mono text-lg">
+                        <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% else %}text-mk-text-secondary{% endif %}">
+                            {{ set_score.player1_score }}
+                        </span>
+                        <span class="text-mk-text-secondary px-3 py-1 bg-mk-darkest rounded text-sm">
+                            Set {{ set_score.set_number }}
+                        </span>
+                        <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% else %}text-mk-text-secondary{% endif %}">
+                            {{ set_score.player2_score }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="px-6 py-3 bg-mk-fire text-mk-dark font-black text-2xl rounded">VS</div>
+                {% endif %}
+            </div>
+
+            <!-- Player 2 -->
+            <div class="flex-1 text-center">
+                {{ user_avatar(match.player2, size='xlarge', border_class='border-4 ' + ('border-green-500' if match.winner_id == match.player2_id else ('border-red-500' if match.winner_id else 'border-mk-darkest')), extra_class='mx-auto') }}
+                <div class="mt-3">
+                    {{ user_name(match.player2, classes='text-xl font-bold hover:text-mk-fire transition-colors ' + ('text-green-500' if match.winner_id == match.player2_id else ('text-red-500' if match.winner_id else ''))) }}
+                </div>
+                <div class="text-sm text-mk-fire mt-1">{{ match.player2.elo_rating }} ELO</div>
+                {% if elo_changes.get(match.player2_id) %}
+                <div class="text-sm font-bold mt-1 {% if elo_changes[match.player2_id] > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                    {{ '+' if elo_changes[match.player2_id] > 0 else '' }}{{ elo_changes[match.player2_id] }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Match Status -->
+        {% if match.status == 'scheduled' %}
+        <div class="text-center py-3 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg">
+            <span class="text-yellow-500 font-bold">Match not yet played</span>
+        </div>
+        {% elif match.status == 'pending_confirmation' %}
+        <div class="text-center py-3 bg-yellow-500 bg-opacity-10 border border-yellow-500 rounded-lg">
+            <span class="text-yellow-500 font-bold">Awaiting confirmation</span>
+        </div>
+        {% elif match.status == 'disputed' %}
+        <div class="text-center py-3 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg">
+            <span class="text-red-500 font-bold">Disputed - Admin review required</span>
+        </div>
+        {% elif match.winner_id %}
+        <div class="text-center py-3 bg-green-500 bg-opacity-10 border border-green-500 rounded-lg">
+            <span class="text-green-500 font-bold">{{ match.winner.username }} wins!</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Head-to-Head Summary -->
+    <div class="card mb-6">
+        <h2 class="text-2xl font-bold mb-4 text-mk-fire">Head-to-Head Record</h2>
+
+        {% if h2h.total_matches > 0 %}
+        <div class="flex items-center justify-between py-4">
+            <!-- Player 1 Wins -->
+            <div class="text-center flex-1">
+                <div class="text-4xl font-black {% if h2h.user1_wins > h2h.user2_wins %}text-mk-fire{% else %}text-mk-text-secondary{% endif %}">
+                    {{ h2h.user1_wins }}
+                </div>
+                <div class="text-sm text-mk-text-secondary mt-1">{{ h2h.user1.username }}</div>
+            </div>
+
+            <!-- Separator -->
+            <div class="text-2xl text-mk-text-secondary px-4">-</div>
+
+            <!-- Player 2 Wins -->
+            <div class="text-center flex-1">
+                <div class="text-4xl font-black {% if h2h.user2_wins > h2h.user1_wins %}text-mk-fire{% else %}text-mk-text-secondary{% endif %}">
+                    {{ h2h.user2_wins }}
+                </div>
+                <div class="text-sm text-mk-text-secondary mt-1">{{ h2h.user2.username }}</div>
+            </div>
+        </div>
+
+        <!-- Win Bar -->
+        {% set total = h2h.user1_wins + h2h.user2_wins %}
+        {% if total > 0 %}
+        <div class="w-full bg-mk-darkest rounded-full h-3 overflow-hidden flex">
+            <div class="bg-mk-fire h-full" style="width: {{ (h2h.user1_wins / total * 100)|round }}%"></div>
+            <div class="bg-purple-500 h-full" style="width: {{ (h2h.user2_wins / total * 100)|round }}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-mk-text-secondary mt-1">
+            <span>{{ ((h2h.user1_wins / total * 100)|round)|int }}%</span>
+            <span>{{ h2h.total_matches }} matches</span>
+            <span>{{ ((h2h.user2_wins / total * 100)|round)|int }}%</span>
+        </div>
+        {% endif %}
+
+        <!-- View Full H2H Link -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('stats.head_to_head', user1_id=h2h.user1.id, user2_id=h2h.user2.id) }}"
+               class="text-mk-fire hover:text-mk-fire-light text-sm font-semibold">
+                View Full Head-to-Head &rarr;
+            </a>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <div class="text-4xl mb-2">🎯</div>
+            <p class="text-mk-text-secondary">This is their first match!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Previous Matches -->
+    {% set previous_matches = h2h.matches|selectattr('id', 'ne', match.id)|list %}
+    {% if previous_matches %}
+    <div class="card">
+        <h2 class="text-2xl font-bold mb-4 text-mk-fire">Previous Matches</h2>
+
+        <div class="space-y-3">
+            {% for prev_match in previous_matches %}
+            <a href="{{ url_for('match.detail', match_id=prev_match.id) }}"
+               class="block bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
+                <div class="flex items-center justify-between">
+                    <!-- Players -->
+                    <div class="flex items-center gap-2">
+                        <img src="{{ prev_match.player1.avatar }}" class="w-6 h-6 rounded-full">
+                        <span class="{% if prev_match.winner_id == prev_match.player1_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
+                            {{ prev_match.player1.username }}
+                        </span>
+                        <span class="text-mk-text-secondary">vs</span>
+                        <span class="{% if prev_match.winner_id == prev_match.player2_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
+                            {{ prev_match.player2.username }}
+                        </span>
+                        <img src="{{ prev_match.player2.avatar }}" class="w-6 h-6 rounded-full">
+                    </div>
+
+                    <!-- Score -->
+                    {% if prev_match.status == 'walkover' %}
+                    <span class="text-purple-500 text-sm">W/O</span>
+                    {% else %}
+                    <div class="flex gap-2 font-mono text-sm">
+                        {% for set_score in prev_match.set_scores|sort(attribute='set_number') %}
+                        <span class="px-2 py-1 bg-mk-darkest rounded">
+                            {{ set_score.player1_score }}-{{ set_score.player2_score }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Match Details -->
+                <div class="flex justify-between text-xs text-mk-text-secondary mt-2">
+                    <span>{% if prev_match.tournament %}{{ prev_match.tournament.name }}{% else %}Free Match{% endif %}</span>
+                    {% if elo_by_match.get(prev_match.id) %}
+                    <span class="font-bold">
+                        <span class="{% if elo_by_match[prev_match.id].get(prev_match.player1_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                            {{ '+' if elo_by_match[prev_match.id].get(prev_match.player1_id, 0) > 0 else '' }}{{ elo_by_match[prev_match.id].get(prev_match.player1_id, 0) }}
+                        </span>
+                        /
+                        <span class="{% if elo_by_match[prev_match.id].get(prev_match.player2_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                            {{ '+' if elo_by_match[prev_match.id].get(prev_match.player2_id, 0) > 0 else '' }}{{ elo_by_match[prev_match.id].get(prev_match.player2_id, 0) }}
+                        </span>
+                    </span>
+                    {% endif %}
+                    <span>{{ prev_match.played_at.strftime('%b %d, %Y') if prev_match.played_at else '' }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

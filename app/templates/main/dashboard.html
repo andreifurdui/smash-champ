@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "components/user.html" import user_link, user_avatar, user_name %}
+{% from "components/match.html" import match_card %}
 
 {% block title %}Dashboard - .smash{% endblock %}
 
@@ -155,81 +157,7 @@
             {% if recent_matches %}
             <div class="space-y-3">
                 {% for match in recent_matches %}
-                <div class="bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
-                    <!-- Players -->
-                    <div class="flex items-center justify-between mb-2">
-                        <!-- Player 1 -->
-                        <div class="flex items-center gap-2 flex-1">
-                            <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
-                                 class="w-8 h-8 rounded-full">
-                            <div>
-                                <div class="{% if match.player1_id == current_user.id %}font-bold{% endif %}
-                                            {% if match.winner_id == match.player1_id %}text-green-500{% else %}text-red-500{% endif %}">
-                                    {{ match.player1.username }}
-                                </div>
-                                <div class="text-xs text-mk-fire">{{ match.player1.elo_rating }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Score Display -->
-                        {% if match.status == 'walkover' %}
-                        <div class="px-3 py-1 bg-purple-500 bg-opacity-20 border border-purple-500 rounded text-sm">
-                            <span class="text-purple-500 font-semibold">W/O</span>
-                        </div>
-                        {% else %}
-                        <div class="flex flex-col gap-1 font-mono text-sm">
-                            {% for set_score in match.set_scores|sort(attribute='set_number') %}
-                            <span class="px-2 py-1 bg-mk-darkest rounded text-center">
-                                <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% endif %}">{{ set_score.player1_score }}</span>
-                                <span class="text-mk-text-secondary">-</span>
-                                <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% endif %}">{{ set_score.player2_score }}</span>
-                            </span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        <!-- Player 2 -->
-                        <div class="flex items-center gap-2 flex-1 justify-end text-right">
-                            <div>
-                                <div class="{% if match.player2_id == current_user.id %}font-bold{% endif %}
-                                            {% if match.winner_id == match.player2_id %}text-green-500{% else %}text-red-500{% endif %}">
-                                    {{ match.player2.username }}
-                                </div>
-                                <div class="text-xs text-mk-fire">{{ match.player2.elo_rating }}</div>
-                            </div>
-                            <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
-                                 class="w-8 h-8 rounded-full">
-                        </div>
-                    </div>
-
-                    <!-- Match Details with ELO in center -->
-                    <div class="flex items-center text-xs text-mk-text-secondary mt-2">
-                        <span class="flex-1">{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
-
-                        <!-- ELO Changes (center) -->
-                        {% set match_elo = elo_by_match.get(match.id, {}) %}
-                        {% if match_elo %}
-                        <span class="text-sm font-bold">
-                            <span class="{% if match_elo.get(match.player1_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
-                                {{ '+' if match_elo.get(match.player1_id, 0) > 0 else '' }}{{ match_elo.get(match.player1_id, 0) }}
-                            </span>
-                            <span class="text-mk-text-secondary mx-1">/</span>
-                            <span class="{% if match_elo.get(match.player2_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
-                                {{ '+' if match_elo.get(match.player2_id, 0) > 0 else '' }}{{ match_elo.get(match.player2_id, 0) }}
-                            </span>
-                        </span>
-                        {% endif %}
-
-                        <span class="flex-1 text-right">{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
-                    </div>
-
-                    <!-- Walkover indicator -->
-                    {% if match.status == 'walkover' %}
-                    <div class="mt-2 pt-2 border-t border-mk-darkest text-xs">
-                        <span class="text-purple-500">Walkover - {{ match.winner.username }} wins</span>
-                    </div>
-                    {% endif %}
-                </div>
+                {{ match_card(match, show_tournament=true, highlight_user_id=current_user.id, elo_changes=elo_by_match.get(match.id, {})) }}
                 {% endfor %}
             </div>
             {% else %}
@@ -261,8 +189,8 @@
                             <span class="w-6 text-center font-bold">
                                 {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% else %}{{ entry.rank }}.{% endif %}
                             </span>
-                            <img src="{{ entry.user.avatar }}" alt="{{ entry.user.username }}" class="w-8 h-8 rounded-full">
-                            <span class="{% if entry.user.id == current_user.id %}text-mk-fire font-bold{% endif %}">{{ entry.user.username }}</span>
+                            {{ user_avatar(entry.user, size='medium') }}
+                            {{ user_name(entry.user, classes='hover:text-mk-fire transition-colors ' + ('text-mk-fire font-bold' if entry.user.id == current_user.id else '')) }}
                             {% if entry.streak and entry.streak.type == 'win' and entry.streak.count >= 3 %}
                                 <span class="ml-1" title="{{ entry.streak.count }} win streak">🔥</span>
                             {% endif %}
@@ -309,8 +237,8 @@
                                 <span class="w-6">
                                     {% if standing.position == 1 %}🔥{% else %}{{ standing.position }}.{% endif %}
                                 </span>
-                                <img src="{{ standing.user.avatar }}" class="w-6 h-6 rounded-full">
-                                <span>{{ standing.user.username }}</span>
+                                {{ user_avatar(standing.user, size='small') }}
+                                {{ user_name(standing.user, classes='hover:text-mk-fire transition-colors') }}
                             </div>
                             <div class="text-mk-fire font-bold">{{ standing.group_points }}</div>
                         </div>
@@ -326,22 +254,19 @@
                             {% if tournament.status == 'completed' %}🏆 Final Results{% else %}Gauntlet Bracket{% endif %}
                         </div>
                         {% for match in playoff_matches[:3] %}
-                        <div class="flex items-center justify-between text-xs border border-mk-darkest rounded p-2
+                        <a href="{{ url_for('match.detail', match_id=match.id) }}"
+                           class="flex items-center justify-between text-xs border border-mk-darkest rounded p-2 hover:border-mk-fire transition-colors
                                     {% if match.status == 'confirmed' %}bg-green-500 bg-opacity-5{% endif %}">
                             <div class="flex items-center gap-2">
                                 <span class="text-mk-text-secondary">R{{ match.bracket_round }}:</span>
-                                <span {% if match.winner_id == match.player1_id %}class="text-mk-fire font-bold"{% endif %}>
-                                    {{ match.player1.username }}
-                                </span>
+                                {{ user_name(match.player1, classes='hover:text-mk-fire transition-colors ' + ('text-mk-fire font-bold' if match.winner_id == match.player1_id else '')) }}
                                 <span class="text-mk-text-secondary">vs</span>
-                                <span {% if match.winner_id == match.player2_id %}class="text-mk-fire font-bold"{% endif %}>
-                                    {{ match.player2.username }}
-                                </span>
+                                {{ user_name(match.player2, classes='hover:text-mk-fire transition-colors ' + ('text-mk-fire font-bold' if match.winner_id == match.player2_id else '')) }}
                             </div>
                             {% if match.status == 'confirmed' %}
                                 <span class="text-green-500">✓</span>
                             {% endif %}
-                        </div>
+                        </a>
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -467,11 +392,10 @@
                         <!-- Opponent -->
                         <div class="flex items-center gap-3 flex-1 justify-end text-right">
                             <div>
-                                <div class="font-bold">{{ opponent.username }}</div>
+                                {{ user_name(opponent, classes='font-bold hover:text-mk-fire transition-colors') }}
                                 <div class="text-xs text-mk-fire">{{ opponent.elo_rating }}</div>
                             </div>
-                            <img src="{{ opponent.avatar }}" alt="{{ opponent.username }}"
-                                 class="w-12 h-12 rounded-full border-2 {% if loop.first %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
+                            {{ user_avatar(opponent, size='xlarge', border_class='border-2 ' + ('border-mk-fire' if loop.first else 'border-mk-darkest')) }}
                         </div>
                     </div>
 
@@ -521,65 +445,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             {% for match in global_activity[:3] %}
-            {% set match_elo = global_elo_by_match.get(match.id, {}) %}
-            <div class="bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
-                <!-- Players -->
-                <div class="flex items-center justify-between mb-2">
-                    <!-- Player 1 -->
-                    <div class="flex items-center gap-2 flex-1">
-                        <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
-                             class="w-8 h-8 rounded-full">
-                        <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-semibold{% else %}text-red-500{% endif %}">
-                            {{ match.player1.username }}
-                            {% if match_elo.get(match.player1_id) %}
-                                <span class="text-xs {% if match_elo[match.player1_id] > 0 %}text-green-500{% else %}text-red-500{% endif %}">({{ '+' if match_elo[match.player1_id] > 0 else '' }}{{ match_elo[match.player1_id] }})</span>
-                            {% endif %}
-                        </span>
-                    </div>
-
-                    <!-- Score Display -->
-                    {% if match.status == 'walkover' %}
-                    <div class="px-3 py-1 bg-purple-500 bg-opacity-20 border border-purple-500 rounded text-sm">
-                        <span class="text-purple-500 font-semibold">W/O</span>
-                    </div>
-                    {% else %}
-                    <div class="flex flex-col gap-1 font-mono text-sm">
-                        {% for set_score in match.set_scores|sort(attribute='set_number') %}
-                        <span class="px-2 py-1 bg-mk-darkest rounded text-center">
-                            <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% endif %}">{{ set_score.player1_score }}</span>
-                            <span class="text-mk-text-secondary">-</span>
-                            <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% endif %}">{{ set_score.player2_score }}</span>
-                        </span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <!-- Player 2 -->
-                    <div class="flex items-center gap-2 flex-1 justify-end">
-                        <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-semibold{% else %}text-red-500{% endif %}">
-                            {{ match.player2.username }}
-                            {% if match_elo.get(match.player2_id) %}
-                                <span class="text-xs {% if match_elo[match.player2_id] > 0 %}text-green-500{% else %}text-red-500{% endif %}">({{ '+' if match_elo[match.player2_id] > 0 else '' }}{{ match_elo[match.player2_id] }})</span>
-                            {% endif %}
-                        </span>
-                        <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
-                             class="w-8 h-8 rounded-full">
-                    </div>
-                </div>
-
-                <!-- Match Details -->
-                <div class="flex justify-between text-xs text-mk-text-secondary mt-2">
-                    <span>{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
-                    <span>{{ match.played_at.strftime('%b %d') if match.played_at else 'Recently' }}</span>
-                </div>
-
-                <!-- Walkover indicator -->
-                {% if match.status == 'walkover' %}
-                <div class="mt-2 pt-2 border-t border-mk-darkest text-xs">
-                    <span class="text-purple-500">Walkover - {{ match.winner.username }} wins</span>
-                </div>
-                {% endif %}
-            </div>
+            {{ match_card(match, show_tournament=true, elo_changes=global_elo_by_match.get(match.id, {})) }}
             {% endfor %}
         </div>
     </div>

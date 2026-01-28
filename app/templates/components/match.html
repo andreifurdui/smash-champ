@@ -1,0 +1,100 @@
+{# Reusable match display macros #}
+{% from "components/user.html" import user_avatar, user_name %}
+
+{# Clickable match card - links to match detail page #}
+{% macro match_card(match, show_tournament=true, highlight_user_id=none, elo_changes=none, compact=false) %}
+<a href="{{ url_for('match.detail', match_id=match.id) }}"
+   class="block bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
+    {# Players row #}
+    <div class="flex items-center justify-between mb-2">
+        {# Player 1 #}
+        <div class="flex items-center gap-2 flex-1">
+            <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
+                 class="w-8 h-8 rounded-full">
+            <div>
+                <div class="{% if highlight_user_id == match.player1_id %}font-bold{% endif %}
+                            {% if match.winner_id == match.player1_id %}text-green-500{% elif match.winner_id %}text-red-500{% endif %}">
+                    {{ match.player1.username }}
+                </div>
+                {% if not compact %}
+                <div class="text-xs text-mk-fire">{{ match.player1.elo_rating }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Score Display #}
+        {% if match.status == 'walkover' %}
+        <div class="px-3 py-1 bg-purple-500 bg-opacity-20 border border-purple-500 rounded text-sm">
+            <span class="text-purple-500 font-semibold">W/O</span>
+        </div>
+        {% else %}
+        <div class="flex flex-col gap-1 font-mono text-sm">
+            {% for set_score in match.set_scores|sort(attribute='set_number') %}
+            <span class="px-2 py-1 bg-mk-darkest rounded text-center">
+                <span class="{% if set_score.player1_score > set_score.player2_score %}text-green-500 font-bold{% endif %}">{{ set_score.player1_score }}</span>
+                <span class="text-mk-text-secondary">-</span>
+                <span class="{% if set_score.player2_score > set_score.player1_score %}text-green-500 font-bold{% endif %}">{{ set_score.player2_score }}</span>
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Player 2 #}
+        <div class="flex items-center gap-2 flex-1 justify-end text-right">
+            <div>
+                <div class="{% if highlight_user_id == match.player2_id %}font-bold{% endif %}
+                            {% if match.winner_id == match.player2_id %}text-green-500{% elif match.winner_id %}text-red-500{% endif %}">
+                    {{ match.player2.username }}
+                </div>
+                {% if not compact %}
+                <div class="text-xs text-mk-fire">{{ match.player2.elo_rating }}</div>
+                {% endif %}
+            </div>
+            <img src="{{ match.player2.avatar }}" alt="{{ match.player2.username }}"
+                 class="w-8 h-8 rounded-full">
+        </div>
+    </div>
+
+    {# Match Details row #}
+    <div class="flex items-center text-xs text-mk-text-secondary mt-2">
+        {% if show_tournament %}
+        <span class="flex-1">{% if match.tournament %}{{ match.tournament.name }}{% else %}Free Match{% endif %}</span>
+        {% endif %}
+
+        {# ELO Changes (center) #}
+        {% if elo_changes %}
+        <span class="text-sm font-bold">
+            <span class="{% if elo_changes.get(match.player1_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                {{ '+' if elo_changes.get(match.player1_id, 0) > 0 else '' }}{{ elo_changes.get(match.player1_id, 0) }}
+            </span>
+            <span class="text-mk-text-secondary mx-1">/</span>
+            <span class="{% if elo_changes.get(match.player2_id, 0) > 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                {{ '+' if elo_changes.get(match.player2_id, 0) > 0 else '' }}{{ elo_changes.get(match.player2_id, 0) }}
+            </span>
+        </span>
+        {% endif %}
+
+        <span class="flex-1 text-right">{{ match.played_at.strftime('%b %d') if match.played_at else 'Scheduled' }}</span>
+    </div>
+
+    {# Walkover indicator #}
+    {% if match.status == 'walkover' %}
+    <div class="mt-2 pt-2 border-t border-mk-darkest text-xs">
+        <span class="text-purple-500">Walkover - {{ match.winner.username }} wins</span>
+    </div>
+    {% endif %}
+</a>
+{% endmacro %}
+
+{# Compact match display for lists (non-clickable version for inline use) #}
+{% macro match_result_inline(match, highlight_user_id=none) %}
+<span class="inline-flex items-center gap-1">
+    <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
+        {{ match.player1.username }}
+    </span>
+    <span class="text-mk-text-secondary">vs</span>
+    <span class="{% if match.winner_id == match.player2_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
+        {{ match.player2.username }}
+    </span>
+</span>
+{% endmacro %}

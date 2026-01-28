@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "components/user.html" import user_link, user_avatar, user_name %}
+{% from "components/match.html" import match_card %}
 
 {% block title %}{{ user.username }} Stats - .smash{% endblock %}
 
@@ -55,7 +57,7 @@
                     <span class="text-mk-text-secondary">{{ entry.elo_before }} → {{ entry.elo_after }}</span>
                 </div>
                 <div class="text-xs text-mk-text-secondary">
-                    vs {{ entry.match.player1.username if entry.match.player1_id != user.id else entry.match.player2.username }}
+                    vs {% if entry.match.player1_id != user.id %}{{ user_name(entry.match.player1, classes='hover:text-mk-fire transition-colors') }}{% else %}{{ user_name(entry.match.player2, classes='hover:text-mk-fire transition-colors') }}{% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -101,7 +103,7 @@
         {% if recent_matches %}
         <div class="space-y-3">
             {% for match in recent_matches %}
-            <div class="p-3 bg-mk-darker rounded-lg">
+            <a href="{{ url_for('match.detail', match_id=match.id) }}" class="block p-3 bg-mk-darker rounded-lg hover:border hover:border-mk-fire transition-colors">
                 <div class="flex items-center justify-between text-sm">
                     <div class="flex items-center gap-2">
                         <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% else %}text-red-500{% endif %}">
@@ -127,7 +129,7 @@
                     <span class="mr-2">Set {{ set_score.set_number }}: {{ set_score.player1_score }}-{{ set_score.player2_score }}</span>
                     {% endfor %}
                 </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
         {% else %}

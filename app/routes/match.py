@@ -7,10 +7,44 @@ from app.services.match import (
     submit_match_score, confirm_match_score, dispute_match_score,
     forfeit_match, create_free_match, get_user_free_matches
 )
-from app.models import Match, User
+from app.models import Match, User, EloHistory
 from app.extensions import db
 
 bp = Blueprint('match', __name__, url_prefix='/match')
+
+
+@bp.route('/<int:match_id>')
+@login_required
+def detail(match_id):
+    """Display match details with head-to-head history."""
+    from app.services.stats import get_head_to_head
+
+    match = Match.query.options(
+        db.joinedload(Match.player1),
+        db.joinedload(Match.player2),
+        db.joinedload(Match.tournament),
+    ).get_or_404(match_id)
+
+    h2h = get_head_to_head(match.player1_id, match.player2_id)
+
+    # Get ELO changes for this match
+    elo_changes = {}
+    elo_records = EloHistory.query.filter_by(match_id=match_id).all()
+    elo_changes = {e.user_id: e.elo_change for e in elo_records}
+
+    # Build elo_by_match for previous matches
+    elo_by_match = {}
+    for prev_match in h2h['matches']:
+        if prev_match.id != match_id:
+            prev_elo_records = EloHistory.query.filter_by(match_id=prev_match.id).all()
+            if prev_elo_records:
+                elo_by_match[prev_match.id] = {e.user_id: e.elo_change for e in prev_elo_records}
+
+    return render_template('match/detail.html',
+                          match=match,
+                          h2h=h2h,
+                          elo_changes=elo_changes,
+                          elo_by_match=elo_by_match)
 
 
 @bp.route('/<int:match_id>/submit', methods=['GET', 'POST'])

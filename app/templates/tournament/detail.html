@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/user.html" import user_link, user_avatar, user_name %}
 
 {% block title %}{{ tournament.name }} - .smash{% endblock %}
 
@@ -134,10 +135,10 @@
                     {% for player in players %}
                     <div class="bg-mk-darker border {% if player.id == current_user.id %}border-mk-fire bg-mk-fire bg-opacity-5{% else %}border-mk-darkest{% endif %} rounded-lg p-4 hover:border-mk-fire transition-colors">
                         <div class="flex items-center gap-3 mb-2">
-                            <img src="{{ player.avatar }}" alt="{{ player.username }}" class="w-12 h-12 rounded-full">
+                            {{ user_avatar(player, size='xlarge') }}
                             <div class="flex-1">
                                 <div class="font-bold text-lg">
-                                    {{ player.username }}
+                                    {{ user_name(player, classes='hover:text-mk-fire transition-colors') }}
                                     {% if player.id == current_user.id %}
                                     <span class="text-mk-fire text-sm">(You)</span>
                                     {% endif %}
@@ -191,9 +192,9 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <img src="{{ standing.user.avatar }}" alt="{{ standing.user.username }}" class="w-8 h-8 rounded-full">
+                                        {{ user_avatar(standing.user, size='medium') }}
                                         <span class="font-semibold">
-                                            {{ standing.user.username }}
+                                            {{ user_name(standing.user, classes='hover:text-mk-fire transition-colors') }}
                                             {% if standing.user.id == current_user.id %}
                                             <span class="text-mk-fire text-xs">(You)</span>
                                             {% endif %}
@@ -254,10 +255,10 @@
                         </div>
 
                         <!-- Player Info -->
-                        <img src="{{ standing.user.avatar }}" alt="{{ standing.user.username }}" class="w-12 h-12 rounded-full">
+                        {{ user_avatar(standing.user, size='xlarge') }}
                         <div class="flex-1">
                             <div class="font-bold text-lg">
-                                {{ standing.user.username }}
+                                {{ user_name(standing.user, classes='hover:text-mk-fire transition-colors') }}
                                 {% if standing.user.id == current_user.id %}
                                 <span class="text-mk-fire text-sm">(You)</span>
                                 {% endif %}
@@ -286,7 +287,7 @@
                 {% if matches %}
                 <div class="space-y-3">
                     {% for match in matches %}
-                    <div class="bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
+                    <a href="{{ url_for('match.detail', match_id=match.id) }}" class="block bg-mk-darker border border-mk-darkest rounded-lg p-4 hover:border-mk-fire transition-colors">
                         <div class="flex items-center justify-between">
                             <!-- Player 1 -->
                             <div class="flex items-center gap-3 flex-1">
@@ -341,7 +342,7 @@
                             {% endif %}
                         </div>
                         {% endif %}
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
                 {% else %}
@@ -364,7 +365,7 @@
                 <div class="space-y-4">
                     {% for match in playoff_matches|sort(attribute='bracket_round') %}
                     {% set is_final = loop.last %}
-                    <div class="bg-mk-darker border-2 rounded-lg p-4
+                    <a href="{{ url_for('match.detail', match_id=match.id) }}" class="block bg-mk-darker border-2 rounded-lg p-4 hover:opacity-90 transition-opacity
                                 {% if match.status == 'confirmed' %}border-green-500
                                 {% elif match.status == 'walkover' %}border-purple-500
                                 {% elif match.status == 'pending_confirmation' %}border-yellow-500
@@ -451,7 +452,7 @@
                             <span class="text-purple-500">🚫 Walkover - {{ match.winner.username }} wins</span>
                             {% endif %}
                         </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
 

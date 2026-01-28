@@ -1,0 +1,28 @@
+{# Reusable user display macros #}
+
+{# Avatar + username as link #}
+{% macro user_link(user, show_avatar=true, avatar_size='small', classes='') %}
+{% set sizes = {'small': 'w-6 h-6', 'medium': 'w-8 h-8', 'large': 'w-10 h-10', 'xlarge': 'w-12 h-12'} %}
+<a href="{{ url_for('stats.user_stats', user_id=user.id) }}"
+   class="inline-flex items-center gap-2 hover:text-mk-fire transition-colors {{ classes }}">
+    {%- if show_avatar %}
+    <img src="{{ user.avatar }}" alt="{{ user.username }}"
+         class="{{ sizes.get(avatar_size, 'w-6 h-6') }} rounded-full">
+    {%- endif %}
+    <span>{{ user.username }}</span>
+</a>
+{% endmacro %}
+
+{# Avatar only (clickable) #}
+{% macro user_avatar(user, size='medium', border_class='', extra_class='') %}
+{% set sizes = {'small': 'w-6 h-6', 'medium': 'w-8 h-8', 'large': 'w-10 h-10', 'xlarge': 'w-12 h-12'} %}
+<a href="{{ url_for('stats.user_stats', user_id=user.id) }}" class="block">
+    <img src="{{ user.avatar }}" alt="{{ user.username }}"
+         class="{{ sizes.get(size, 'w-8 h-8') }} rounded-full {{ border_class }} {{ extra_class }} hover:opacity-80 transition-opacity">
+</a>
+{% endmacro %}
+
+{# Username text only (clickable) #}
+{% macro user_name(user, classes='hover:text-mk-fire transition-colors') %}
+<a href="{{ url_for('stats.user_stats', user_id=user.id) }}" class="{{ classes }}">{{ user.username }}</a>
+{% endmacro %}

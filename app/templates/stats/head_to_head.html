@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/user.html" import user_link, user_avatar, user_name %}
 
 {% block title %}Head to Head - .smash{% endblock %}
 
@@ -43,9 +44,8 @@
         <div class="flex items-center justify-between">
             <!-- Player 1 -->
             <div class="flex-1 text-center">
-                <img src="{{ h2h_data.user1.avatar }}" class="w-20 h-20 rounded-full mx-auto mb-2 border-4
-                     {% if h2h_data.user1_wins > h2h_data.user2_wins %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
-                <div class="font-bold text-lg">{{ h2h_data.user1.username }}</div>
+                {{ user_avatar(h2h_data.user1, size='xlarge', border_class='border-4 mx-auto mb-2 ' + ('border-mk-fire' if h2h_data.user1_wins > h2h_data.user2_wins else 'border-mk-darkest'), extra_class='w-20 h-20') }}
+                {{ user_name(h2h_data.user1, classes='font-bold text-lg hover:text-mk-fire transition-colors') }}
                 <div class="text-3xl font-black text-mk-fire mt-2">{{ h2h_data.user1_wins }}</div>
                 <div class="text-xs text-mk-text-secondary">Wins</div>
             </div>
@@ -55,9 +55,8 @@
 
             <!-- Player 2 -->
             <div class="flex-1 text-center">
-                <img src="{{ h2h_data.user2.avatar }}" class="w-20 h-20 rounded-full mx-auto mb-2 border-4
-                     {% if h2h_data.user2_wins > h2h_data.user1_wins %}border-mk-fire{% else %}border-mk-darkest{% endif %}">
-                <div class="font-bold text-lg">{{ h2h_data.user2.username }}</div>
+                {{ user_avatar(h2h_data.user2, size='xlarge', border_class='border-4 mx-auto mb-2 ' + ('border-mk-fire' if h2h_data.user2_wins > h2h_data.user1_wins else 'border-mk-darkest'), extra_class='w-20 h-20') }}
+                {{ user_name(h2h_data.user2, classes='font-bold text-lg hover:text-mk-fire transition-colors') }}
                 <div class="text-3xl font-black text-mk-fire mt-2">{{ h2h_data.user2_wins }}</div>
                 <div class="text-xs text-mk-text-secondary">Wins</div>
             </div>
@@ -70,7 +69,7 @@
         <h2 class="text-xl font-bold mb-4">Match History ({{ h2h_data.total_matches }} matches)</h2>
         <div class="space-y-2">
             {% for match in h2h_data.matches %}
-            <div class="p-3 bg-mk-darker rounded">
+            <a href="{{ url_for('match.detail', match_id=match.id) }}" class="block p-3 bg-mk-darker rounded hover:border hover:border-mk-fire transition-colors">
                 <div class="flex items-center justify-between text-sm">
                     <div>
                         <span class="{% if match.winner_id == match.player1_id %}text-green-500 font-bold{% endif %}">
@@ -90,7 +89,7 @@
                     <span class="mr-2">{{ set_score.player1_score }}-{{ set_score.player2_score }}</span>
                     {% endfor %}
                 </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
     </div>

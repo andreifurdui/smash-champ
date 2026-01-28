@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/user.html" import user_link, user_avatar, user_name %}
 
 {% block title %}Free Matches{% endblock %}
 
@@ -18,8 +19,8 @@
     <div class="space-y-4">
         {% for match in matches %}
         <div class="card bg-mk-darker flex flex-col sm:flex-row items-center justify-between gap-4">
-            <!-- Players -->
-            <div class="flex items-center gap-4 flex-1">
+            <!-- Players (clickable to match detail) -->
+            <a href="{{ url_for('match.detail', match_id=match.id) }}" class="flex items-center gap-4 flex-1 hover:opacity-80 transition-opacity">
                 <!-- Player 1 -->
                 <div class="flex items-center gap-2">
                     <img src="{{ match.player1.avatar }}" alt="{{ match.player1.username }}"
@@ -39,7 +40,7 @@
                         {{ match.player2.username }}
                     </span>
                 </div>
-            </div>
+            </a>
 
             <!-- Status Badge -->
             <div class="flex items-center gap-3">
