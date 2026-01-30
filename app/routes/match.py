@@ -99,7 +99,7 @@ def submit(match_id):
                             'player2_score': p1_field.data
                         })
 
-            submit_match_score(match_id, current_user.id, sets_data)
+            submit_match_score(match_id, current_user.id, sets_data, sets_to_win=sets_to_win)
             flash('Score submitted! Waiting for opponent confirmation.', 'success')
             return redirect(url_for('main.dashboard'))
 

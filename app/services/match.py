@@ -157,7 +157,7 @@ def get_user_stats(user_id: int) -> dict:
     }
 
 
-def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Match:
+def submit_match_score(match_id: int, user_id: int, sets_data: list[dict], sets_to_win: int = None) -> Match:
     """
     Submit match score.
 
@@ -165,6 +165,7 @@ def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Ma
         match_id: Match ID
         user_id: User submitting (must be participant)
         sets_data: List of dicts with player1_score, player2_score
+        sets_to_win: Number of sets to win (1 or 2). If None, uses tournament setting or defaults to 2
 
     Returns:
         Updated Match object
@@ -185,8 +186,9 @@ def submit_match_score(match_id: int, user_id: int, sets_data: list[dict]) -> Ma
     if match.status != MatchStatus.SCHEDULED.value:
         raise ValueError(f'Cannot submit score for match in {match.status} status')
 
-    # Get tournament's sets_to_win setting (default 2 for free matches)
-    sets_to_win = match.tournament.sets_to_win if match.tournament else 2
+    # Get sets_to_win: use provided value for free matches, tournament setting otherwise
+    if sets_to_win is None:
+        sets_to_win = match.tournament.sets_to_win if match.tournament else 2
 
     # Validate number of sets based on format
     if sets_to_win == 1:

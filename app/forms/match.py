@@ -37,9 +37,6 @@ class ScoreSubmissionForm(FlaskForm):
         NumberRange(min=0, max=30, message='Score must be 0-30')
     ])
 
-    # Match format selection (for free matches)
-    match_format = HiddenField('Match Format', default='3')
-
     submit = SubmitField('Submit Score')
 
     def __init__(self, *args, sets_to_win=2, **kwargs):
